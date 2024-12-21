@@ -151,7 +151,7 @@ void processSelectionKey() {
     runCurrentSelection();
   } else if (last_key == RIGHT) {
     runCurrentSelection();
-  } else {
+  } else {  //SELECT
     runCurrentSelection();
   }
 }
