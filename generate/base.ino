@@ -9,11 +9,55 @@
 #define NONE 0
 #define UP_ARROW 0
 #define DOWN_ARROW 1
+#define KEY_DEBOUNCE 10
 //{{DEFINE}}
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
-char last_key = NONE;
+byte last_key = NONE;
+
+byte pressed_key = NONE;
+
+byte current_key = NONE;
+
+long current_key_time;
+
+byte readKey() {
+  byte key = NONE;
+  int x = analogRead(0);
+  if (x < 60) {
+    key = RIGHT;
+  } else if (x < 200) {
+    key = UP;
+  } else if (x < 400) {
+    key = DOWN;
+  } else if (x < 600) {
+    key = LEFT;
+  } else if (x < 800) {
+    key = SELECT;
+  }
+  return key;
+}
+
+byte getLastKey() {
+  byte key = readKey();
+  if (key != NONE) {
+    if (current_key != key) {
+      current_key = key;
+      current_key_time = millis();
+    } else if (key != pressed_key && millis() - current_key_time >= KEY_DEBOUNCE) {
+      pressed_key = key;
+    }
+    return NONE;
+  } else {
+    if (pressed_key != NONE) {
+      key = pressed_key;
+      pressed_key = NONE;
+      current_key = NONE;
+    }
+    return key;
+  }
+}
 
 char position = 0;
 
@@ -80,6 +124,7 @@ void printCurrentSelection() {
 }
 
 void runCurrentSelection() {
+  printBottom("Running");
   switch (position) {
 //{{RUN_SELECTION}}
   }
@@ -97,17 +142,7 @@ void previousSelection() {
   }
 }
 
-void setup() {
-  lcd.begin(16, 2);
-  lcd.createChar(UP_ARROW, upArrow);
-  lcd.createChar(DOWN_ARROW, downArrow);
-  printTop("Loading...");
-  Keyboard.begin();
-  printCurrentSelection();
-}
-
-void processSelectionKey(){
-  printBottom("Running");
+void processSelectionKey() {
   if (last_key == UP) {
     previousSelection();
   } else if (last_key == DOWN) {
@@ -123,26 +158,22 @@ void processSelectionKey(){
 
 void processLastKey() {
   if (last_key != NONE) {
-    processSelectionKey();//this call should be dependent on the current mode
+    processSelectionKey();  //this call should be dependent on the current mode
     last_key = NONE;
-    printCurrentSelection();//this call should be dependent on the current mode
+    printCurrentSelection();  //this call should be dependent on the current mode
   }
 }
 
+void setup() {
+  lcd.begin(16, 2);
+  lcd.createChar(UP_ARROW, upArrow);
+  lcd.createChar(DOWN_ARROW, downArrow);
+  printTop("Loading...");
+  Keyboard.begin();
+  printCurrentSelection();
+}
+
 void loop() {
-  int x;
-  x = analogRead(0);
-  if (x < 60) {
-    last_key = RIGHT;
-  } else if (x < 200) {
-    last_key = UP;
-  } else if (x < 400) {
-    last_key = DOWN;
-  } else if (x < 600) {
-    last_key = LEFT;
-  } else if (x < 800) {
-    last_key = SELECT;
-  } else {
-    processLastKey();
-  }
+  last_key = getLastKey();
+  processLastKey();
 }
