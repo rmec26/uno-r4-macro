@@ -14,8 +14,6 @@
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
-byte last_key = NONE;
-
 byte pressed_key = NONE;
 
 byte current_key = NONE;
@@ -97,20 +95,38 @@ void printBottom(char* text) {
   lcd.print(text);
 }
 
+void printMenuTop(char* text) {
+  lcd.setCursor(1, 0);
+  lcd.print("               ");
+  lcd.setCursor(1, 0);
+  lcd.print(text);
+}
+
+void printMenuBottom(char* text) {
+  lcd.setCursor(1, 1);
+  lcd.print("               ");
+  lcd.setCursor(1, 1);
+  lcd.print(text);
+}
+
 void printMenu() {
-  printBottom("");
   switch (position) {
     case 0:
-      lcd.setCursor(3, 1);
+      lcd.setCursor(0, 0);
+      lcd.write(" ");
+      lcd.setCursor(0, 1);
       lcd.write(byte(DOWN_ARROW));
       break;
     case MAX_ENTRIES - 1:
-      lcd.setCursor(2, 1);
+      lcd.setCursor(0, 0);
       lcd.write(byte(UP_ARROW));
+      lcd.setCursor(0, 1);
+      lcd.write(" ");
       break;
     default:
-      lcd.setCursor(2, 1);
+      lcd.setCursor(0, 0);
       lcd.write(byte(UP_ARROW));
+      lcd.setCursor(0, 1);
       lcd.write(byte(DOWN_ARROW));
       break;
   }
@@ -124,10 +140,11 @@ void printCurrentSelection() {
 }
 
 void runCurrentSelection() {
-  printBottom("Running");
+  printMenuBottom("Running");
   switch (position) {
 //{{RUN_SELECTION}}
   }
+  printMenuBottom("");
 }
 
 void nextSelection() {
@@ -142,24 +159,23 @@ void previousSelection() {
   }
 }
 
-void processSelectionKey() {
-  if (last_key == UP) {
+void processSelectionKey(byte key) {
+  if (key == UP) {
     previousSelection();
-  } else if (last_key == DOWN) {
+  } else if (key == DOWN) {
     nextSelection();
-  } else if (last_key == LEFT) {
-    runCurrentSelection();
-  } else if (last_key == RIGHT) {
+  } else if (key == LEFT) {
+    // runCurrentSelection();
+  } else if (key == RIGHT) {
     runCurrentSelection();
   } else {  //SELECT
     runCurrentSelection();
   }
 }
 
-void processLastKey() {
-  if (last_key != NONE) {
-    processSelectionKey();  //this call should be dependent on the current mode
-    last_key = NONE;
+void processLastKey(byte key) {
+  if (key != NONE) {
+    processSelectionKey(key);  //this call should be dependent on the current mode
     printCurrentSelection();  //this call should be dependent on the current mode
   }
 }
@@ -174,6 +190,5 @@ void setup() {
 }
 
 void loop() {
-  last_key = getLastKey();
-  processLastKey();
+  processLastKey( getLastKey());
 }
