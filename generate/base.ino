@@ -25,6 +25,14 @@ long current_key_time;
 
 byte position = 0;
 
+void (*currentRunner)(byte);
+
+//Start Functions definitions
+
+void loadStart();
+
+void runStart(byte key);
+
 byte readKey() {
   byte key = NONE;
   int x = analogRead(0);
@@ -98,22 +106,22 @@ byte noArrow[8] = {
 byte leftArrow[8] = {
   0b00000,
   0b00000,
-  0b01100,
-  0b00110,
-  0b00011,
   0b00110,
   0b01100,
+  0b11000,
+  0b01100,
+  0b00110,
   0b00000
 };
 
 byte rightArrow[8] = {
   0b00000,
   0b00000,
-  0b00110,
-  0b01100,
-  0b11000,
   0b01100,
   0b00110,
+  0b00011,
+  0b00110,
+  0b01100,
   0b00000
 };
 
@@ -194,7 +202,9 @@ void printMenuArrows() {
   }
 }
 
-void printCurrentSelection() {
+//Menu Functions
+
+void printCurrentMenuSelection() {
   switch (position) {
 //{{PRINT_SELECTION}}
   }
@@ -221,40 +231,55 @@ void previousSelection() {
   }
 }
 
-void processSelectionKey(byte key) {
-  if (key == UP) {
-    previousSelection();
-  } else if (key == DOWN) {
-    nextSelection();
-  } else if (key == LEFT) {
-    // runCurrentSelection();
-  } else if (key == RIGHT) {
-    runCurrentSelection();
-  } else {  //SELECT
-    runCurrentSelection();
+void loadMenu() {
+  printCurrentMenuSelection();
+}
+
+void runMenu(byte key) {
+  if (key != NONE) {
+    if (key == UP) {
+      previousSelection();
+      printCurrentMenuSelection();
+    } else if (key == DOWN) {
+      nextSelection();
+      printCurrentMenuSelection();
+    } else if (key == LEFT) {
+      currentRunner = runStart;
+      loadStart();
+    } else if (key == RIGHT || key == SELECT) {
+      runCurrentSelection();
+      printCurrentMenuSelection();
+    }
   }
 }
 
-void processLastKey(byte key) {
+//Start Function
+
+void loadStart() {
+  printTop("  Uno R4 Macro");
+  printBottom(" Press any key");
+}
+
+void runStart(byte key) {
   if (key != NONE) {
-    processSelectionKey(key);  //this call should be dependent on the current mode
-    printCurrentSelection();   //this call should be dependent on the current mode
+    currentRunner = runMenu;
+    loadMenu();
   }
 }
 
 void setup() {
-  // Serial.begin(9600);
   lcd.begin(16, 2);
+  printTop("Loading...");
   lcd.createChar(UP_ARROW, upArrow);
   lcd.createChar(DOWN_ARROW, downArrow);
   lcd.createChar(LEFT_ARROW, leftArrow);
   lcd.createChar(RIGHT_ARROW, rightArrow);
   lcd.createChar(NO_ARROW, noArrow);
-  printTop("Loading...");
   Keyboard.begin();
-  printCurrentSelection();
+  currentRunner = runStart;
+  loadStart();
 }
 
 void loop() {
-  processLastKey(getLastKey());
+  (*currentRunner)(getLastKey());
 }

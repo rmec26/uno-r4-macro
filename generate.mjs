@@ -69,7 +69,7 @@ const generateInput = (input) => {
 const generateNameCases = () => entries.map(({ name }, i) => `    case ${i}:
       printMenuTop(${JSON.stringify(name)});
       printMenuBottom("Run");
-      lcd.write(byte(LEFT_ARROW));
+      lcd.write(byte(RIGHT_ARROW));
       break;`).join("\n");
 
 const generateSelectionCases = () => entries.map(({ input }, i) => `    case ${i}:
@@ -93,9 +93,7 @@ writeFileSync(relative("uno-r4-macro.ino"), baseFile.replaceAll(/ *\/\/\{\{(.+)\
 
 //TODO
 
-//Force a max size on the written text
-//add modes
-//add start mode
+//Force a max size on the written text or make the menu be scrollable
 //add 'keys' to define a specific key press
 //add 'delaytext' to write some text with a certain delay
 //add 'time' to show and write the current time of the macropad
