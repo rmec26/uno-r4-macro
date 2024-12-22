@@ -1,5 +1,18 @@
-import { readFileSync, writeFileSync } from "fs"
+import { existsSync, readFileSync, statSync, writeFileSync } from "fs"
 import { sep } from "path";
+
+const inputPath = process.argv[2];
+
+if (!inputPath) {
+  console.log("No input path given to generate.");
+  process.exit(1);
+} else if (!existsSync(inputPath)) {
+  console.log("Given input path does not exist.");
+  process.exit(2);
+} else if (!statSync(inputPath).isFile()) {
+  console.log("Given input path is not a file.");
+  process.exit(3);
+}
 
 const relative = (...parts) => { parts.unshift(import.meta.dirname); return parts.join(sep) };
 
@@ -41,7 +54,7 @@ const processInput = (input) => {
   return result;
 }
 
-let entries = JSON.parse(readFileSync(relative("input.json")).toString()).map(entry => {
+let entries = JSON.parse(readFileSync(inputPath).toString()).map(entry => {
   let [name, inputs] = Object.entries(entry)[0];
   if (!(inputs instanceof Array)) {
     inputs = [inputs];
