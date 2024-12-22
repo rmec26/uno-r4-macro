@@ -6,11 +6,13 @@ const relative = (...parts) => { parts.unshift(import.meta.dirname); return part
 const checkAndProcessText = (input) => input && typeof input.text === "string" && input.text.length > 0 ? { text: input.text } : null;
 const checkAndProcessDelay = (input) => input && typeof input.delay === "number" && input.delay > 0 ? { delay: Math.trunc(input.delay) } : null;
 const checkAndProcessWait = (input) => input && input.wait ? { wait: true } : null;
+const checkAndProcessWaitTimeout = (input) => input && typeof input.waitTimeout === "number" && input.waitTimeout > 0 ? { waitTimeout: Math.trunc(input.waitTimeout) } : null;
 
 const allProcessors = [
   checkAndProcessText,
   checkAndProcessDelay,
   checkAndProcessWait,
+  checkAndProcessWaitTimeout,
 ];
 
 const checkAndProcessAll = (input) => {
@@ -59,6 +61,9 @@ const generateInput = (input) => {
   if (input.wait) {
     return `      waitForAnyKey();`
   }
+  if (input.waitTimeout) {
+    return `      waitForAnyKey(${input.waitTimeout});`
+  }
 }
 
 const generateNameCases = () => entries.map(({ name }, i) => `    case ${i}:
@@ -89,7 +94,6 @@ writeFileSync(relative("uno-r4-macro.ino"), baseFile.replaceAll(/ *\/\/\{\{(.+)\
 //Force a max size on the written text
 //add modes
 //add start mode
-//add wait mode?
 //add 'keys' to define a specific key press
 //add 'delaytext' to write some text with a certain delay
 //add 'time' to show and write the current time of the macropad

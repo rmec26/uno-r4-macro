@@ -9,6 +9,7 @@
 #define NONE 0
 #define UP_ARROW 0
 #define DOWN_ARROW 1
+#define NO_ARROW 2
 #define KEY_DEBOUNCE 10
 //{{DEFINE}}
 
@@ -81,6 +82,17 @@ byte downArrow[8] = {
   0b00000
 };
 
+byte noArrow[8] = {
+  0b00000,
+  0b00000,
+  0b00100,
+  0b01110,
+  0b01110,
+  0b00100,
+  0b00000,
+  0b00000
+};
+
 void printTop(char* text) {
   lcd.setCursor(0, 0);
   lcd.print("                ");
@@ -96,35 +108,50 @@ void printBottom(char* text) {
 }
 
 void printMenuTop(char* text) {
-  lcd.setCursor(1, 0);
+  lcd.setCursor(2, 0);
   lcd.print("               ");
-  lcd.setCursor(1, 0);
+  lcd.setCursor(2, 0);
   lcd.print(text);
 }
 
 void printMenuBottom(char* text) {
-  lcd.setCursor(1, 1);
+  lcd.setCursor(2, 1);
   lcd.print("               ");
-  lcd.setCursor(1, 1);
+  lcd.setCursor(2, 1);
   lcd.print(text);
 }
 
-byte waitForAnyKey() {
+byte waitForAnyKey(long timeout) {
   printMenuBottom("Press any key");
   byte key = NONE;
-  do {
-    key = getLastKey();
-  } while (key == NONE);
+  if (timeout) {
+    long start = millis();
+    do {
+      key = getLastKey();
+    } while (key == NONE && (millis() - start) < timeout);
+  } else {
+    do {
+      key = getLastKey();
+    } while (key == NONE);
+  }
   printMenuBottom("Running");
   return key;
 }
 
+byte waitForAnyKey() {
+  return waitForAnyKey(0);
+}
 
-void printMenu() {
+void printMenuArrows() {
+  lcd.setCursor(0, 0);
+  lcd.write("  ");
+  lcd.setCursor(0, 1);
+  lcd.write("  ");
+
   switch (position) {
     case 0:
       lcd.setCursor(0, 0);
-      lcd.write(" ");
+      lcd.write(byte(NO_ARROW));
       lcd.setCursor(0, 1);
       lcd.write(byte(DOWN_ARROW));
       break;
@@ -132,7 +159,7 @@ void printMenu() {
       lcd.setCursor(0, 0);
       lcd.write(byte(UP_ARROW));
       lcd.setCursor(0, 1);
-      lcd.write(" ");
+      lcd.write(byte(NO_ARROW));
       break;
     default:
       lcd.setCursor(0, 0);
@@ -147,7 +174,7 @@ void printCurrentSelection() {
   switch (position) {
 //{{PRINT_SELECTION}}
   }
-  printMenu();
+  printMenuArrows();
 }
 
 void runCurrentSelection() {
@@ -196,6 +223,7 @@ void setup() {
   lcd.begin(16, 2);
   lcd.createChar(UP_ARROW, upArrow);
   lcd.createChar(DOWN_ARROW, downArrow);
+  lcd.createChar(NO_ARROW, noArrow);
   printTop("Loading...");
   Keyboard.begin();
   printCurrentSelection();
