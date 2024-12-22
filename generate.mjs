@@ -3,26 +3,40 @@ import { sep } from "path";
 
 const relative = (...parts) => { parts.unshift(import.meta.dirname); return parts.join(sep) };
 
+const checkAndProcessText = (input) => input && typeof input.text === "string" && input.text.length > 0 ? { text: input.text } : null;
+const checkAndProcessDelay = (input) => input && typeof input.delay === "number" && input.delay > 0 ? { delay: Math.trunc(input.delay) } : null;
+const checkAndProcessWait = (input) => input && input.wait ? { wait: true } : null;
+
+const allProcessors = [
+  checkAndProcessText,
+  checkAndProcessDelay,
+  checkAndProcessWait,
+];
+
+const checkAndProcessAll = (input) => {
+  let result = null;
+  for (let process of allProcessors) {
+    result = process(input);
+    if (result) {
+      break;
+    }
+  }
+  return result;
+}
+
 const processInput = (input) => {
+  let result = null;
   switch (typeof input) {
     case "string":
-      if (input.length > 0) {
-        return { text: input };
-      }
+      result = checkAndProcessText({ text: input })
+      break;
     case "number":
-      if (input > 0) {
-        return { delay: Math.trunc(input) };
-      }
+      result = checkAndProcessDelay({ text: input })
+      break;
     case "object":
-      if (typeof input.text === "string" && input.text.length > 0) {
-        return { text: input.text };
-
-      } else if (typeof input.delay === "number" && input.delay > 0) {
-        return { delay: input.delay };
-      }
-
+      result = checkAndProcessAll(input);
   }
-  return null;
+  return result;
 }
 
 let entries = JSON.parse(readFileSync(relative("input.json")).toString()).map(entry => {
@@ -41,6 +55,9 @@ const generateInput = (input) => {
   }
   if (input.delay) {
     return `      delay(${input.delay});`
+  }
+  if (input.wait) {
+    return `      waitForAnyKey();`
   }
 }
 
@@ -74,8 +91,5 @@ writeFileSync(relative("uno-r4-macro.ino"), baseFile.replaceAll(/ *\/\/\{\{(.+)\
 //add start mode
 //add wait mode?
 //add 'keys' to define a specific key press
-//add 'wait' to wait for input on the arduino before running
-//Consider interface change to make the arrows be at the start of the screen
 //add 'delaytext' to write some text with a certain delay
 //add 'time' to show and write the current time of the macropad
-//check what is the best way to make the system be able to wait and continue a flow, probably when running a script enter a running mode and any input that has a wait uses a counter to set what state they are, and let the system return to it after the wait

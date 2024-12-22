@@ -20,6 +20,8 @@ byte current_key = NONE;
 
 long current_key_time;
 
+byte position = 0;
+
 byte readKey() {
   byte key = NONE;
   int x = analogRead(0);
@@ -56,8 +58,6 @@ byte getLastKey() {
     return key;
   }
 }
-
-char position = 0;
 
 byte upArrow[8] = {
   0b00000,
@@ -108,6 +108,17 @@ void printMenuBottom(char* text) {
   lcd.setCursor(1, 1);
   lcd.print(text);
 }
+
+byte waitForAnyKey() {
+  printMenuBottom("Press any key");
+  byte key = NONE;
+  do {
+    key = getLastKey();
+  } while (key == NONE);
+  printMenuBottom("Running");
+  return key;
+}
+
 
 void printMenu() {
   switch (position) {
@@ -176,11 +187,12 @@ void processSelectionKey(byte key) {
 void processLastKey(byte key) {
   if (key != NONE) {
     processSelectionKey(key);  //this call should be dependent on the current mode
-    printCurrentSelection();  //this call should be dependent on the current mode
+    printCurrentSelection();   //this call should be dependent on the current mode
   }
 }
 
 void setup() {
+  // Serial.begin(9600);
   lcd.begin(16, 2);
   lcd.createChar(UP_ARROW, upArrow);
   lcd.createChar(DOWN_ARROW, downArrow);
@@ -190,5 +202,5 @@ void setup() {
 }
 
 void loop() {
-  processLastKey( getLastKey());
+  processLastKey(getLastKey());
 }
