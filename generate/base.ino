@@ -9,7 +9,9 @@
 #define NONE 0
 #define UP_ARROW 0
 #define DOWN_ARROW 1
-#define NO_ARROW 2
+#define LEFT_ARROW 2
+#define RIGHT_ARROW 3
+#define NO_ARROW 4
 #define KEY_DEBOUNCE 10
 //{{DEFINE}}
 
@@ -90,6 +92,28 @@ byte noArrow[8] = {
   0b01110,
   0b00100,
   0b00000,
+  0b00000
+};
+
+byte leftArrow[8] = {
+  0b00000,
+  0b00000,
+  0b01100,
+  0b00110,
+  0b00011,
+  0b00110,
+  0b01100,
+  0b00000
+};
+
+byte rightArrow[8] = {
+  0b00000,
+  0b00000,
+  0b00110,
+  0b01100,
+  0b11000,
+  0b01100,
+  0b00110,
   0b00000
 };
 
@@ -223,6 +247,8 @@ void setup() {
   lcd.begin(16, 2);
   lcd.createChar(UP_ARROW, upArrow);
   lcd.createChar(DOWN_ARROW, downArrow);
+  lcd.createChar(LEFT_ARROW, leftArrow);
+  lcd.createChar(RIGHT_ARROW, rightArrow);
   lcd.createChar(NO_ARROW, noArrow);
   printTop("Loading...");
   Keyboard.begin();

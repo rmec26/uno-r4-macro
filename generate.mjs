@@ -68,6 +68,8 @@ const generateInput = (input) => {
 
 const generateNameCases = () => entries.map(({ name }, i) => `    case ${i}:
       printMenuTop(${JSON.stringify(name)});
+      printMenuBottom("Run");
+      lcd.write(byte(LEFT_ARROW));
       break;`).join("\n");
 
 const generateSelectionCases = () => entries.map(({ input }, i) => `    case ${i}:
