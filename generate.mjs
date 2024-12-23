@@ -54,7 +54,9 @@ const processInput = (input) => {
   return result;
 }
 
-let entries = JSON.parse(readFileSync(inputPath).toString()).map(entry => {
+const inputJson = JSON.parse(readFileSync(inputPath).toString());
+
+let entries = inputJson.macros.map(entry => {
   let [name, inputs] = Object.entries(entry)[0];
   if (!(inputs instanceof Array)) {
     inputs = [inputs];
@@ -89,19 +91,35 @@ const generateSelectionCases = () => entries.map(({ input }, i) => `    case ${i
 ${input.map(input => generateInput(input)).join("\n")}
       break;`).join("\n");
 
+const generateStartMessage = () => {
+  let message = typeof inputJson.startMessage == "string" ? inputJson.startMessage : "Uno R4 Macro";
+  if (message.length < 16) {
+    message = "".padEnd((16 - (message.length % 2 ? message.length + 1 : message.length)) / 2) + message;
+  }
+  return `printTop(${JSON.stringify(message)});`;
+}
+
 let baseFile = readFileSync(relative("generate", "base.ino")).toString();
 
 writeFileSync(relative("uno-r4-macro.ino"), baseFile.replaceAll(/ *\/\/\{\{(.+)\}\}/g, (_, id) => {
+  let generatedText;
   switch (id) {
     case "DEFINE":
-      return `//{{DEFINE_START}}\n${generateDefine()}\n//{{DEFINE_END}}`;
+      generatedText = generateDefine();
+      break;
     case "PRINT_SELECTION":
-      return `//{{PRINT_SELECTION_START}}\n${generateNameCases()}\n//{{PRINT_SELECTION_END}}`;
+      generatedText = generateNameCases();
+      break;
     case "RUN_SELECTION":
-      return `//{{RUN_SELECTION_START}}\n${generateSelectionCases()}\n//{{RUN_SELECTION_END}}`;
+      generatedText = generateSelectionCases();
+      break;
+    case "START_MESSAGE":
+      generatedText = generateStartMessage();
+      break;
     default:
       return `//{{${id}}}`;
   }
+  return `//{{${id}_START}}\n${generatedText}\n//{{${id}_END}}`;
 }));
 
 //TODO

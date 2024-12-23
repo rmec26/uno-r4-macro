@@ -256,7 +256,7 @@ void runMenu(byte key) {
 //Start Function
 
 void loadStart() {
-  printTop("  Uno R4 Macro");
+  //{{START_MESSAGE}}
   printBottom(" Press any key");
 }
 

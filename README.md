@@ -20,26 +20,34 @@ This project allows you to turn an Arduino Uno R4 and a LCD Keypad Shield into a
 
 ## Macro definition
 
-The JSON with the macro definitions should be an array of objects where each object is a macro definition.
+The JSON with the macro definitions should be an object with the given properties.
 
+* `startMessage`:`string` - (Optional) Defines the message shown at the start of the device.
+* `macros`:`macro[]` - Array containg the macro definitions available on the device.
+
+
+### Example of a macro definition file
 ```json
-[
+{
+  "startMessage": "Macro Tester",
+  "macros": [
     {
-        "Macro 1":["ThisIsATest\t",{"delay":100},"wertyuiop12345\n"]
+      "Macro 1": ["ThisIsATest\t",{"delay":500},"qwertyuiop12345\n"]
     },
     {
-        "Macro 2": ["SimpleTestWithNewLine\n"]
+      "Macro 2": ["SimpleTestWithNewLine\n"]
     },
     {
-        "Macro 3": ["justAline"]
+      "Macro 3": ["justAline"]
     },
     {
-        "Macro 4": ["TestWithWaiting\n",{"wait":true},{"text":"line2\n"}]
+      "Macro 4": ["TestWithWaiting\n",{"wait":true},{"text":"line2\n"}]
     },
     {
-        "Macro 5": ["TestWithTimedWaiting\n",{"waitTimeout":5000},{"text":"and done.\n"}]
+      "Macro 5": ["TestWithTimedWaiting\n",{"waitTimeout":5000},{"text":"and done.\n"}]
     }
-]
+  ]
+}
 ```
 
 
