@@ -45,6 +45,16 @@ The JSON with the macro definitions should be an object with the given propertie
     },
     {
       "Macro 5": ["TestWithTimedWaiting\n",{"waitTimeout":5000},{"text":"and done.\n"}]
+    },
+    {
+      "Macro 6": [
+        "RepeatTest\n",
+        {
+          "repeat": 5,
+          "macro": ["Neat\n",200]
+        },
+        {"text": "and done.\n"}
+      ]
     }
   ]
 }
@@ -56,4 +66,5 @@ The JSON with the macro definitions should be an object with the given propertie
 * `text` - writes the given string.
 * `delay` - delays the macro run by the given time amount (in milliseconds).
 * `wait` - waits for a key press on the arduino before continuing running.
+* `waitTimeout` - waits for a key press on the arduino or for the given amount of time to pass, whichever is first, before continuing running.
 * `waitTimeout` - waits for a key press on the arduino or for the given amount of time to pass, whichever is first, before continuing running.

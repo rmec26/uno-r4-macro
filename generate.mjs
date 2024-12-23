@@ -20,12 +20,19 @@ const checkAndProcessText = (input) => input && typeof input.text === "string" &
 const checkAndProcessDelay = (input) => input && typeof input.delay === "number" && input.delay > 0 ? { delay: Math.trunc(input.delay) } : null;
 const checkAndProcessWait = (input) => input && input.wait ? { wait: true } : null;
 const checkAndProcessWaitTimeout = (input) => input && typeof input.waitTimeout === "number" && input.waitTimeout > 0 ? { waitTimeout: Math.trunc(input.waitTimeout) } : null;
+const checkAndProcessRepeat = (input) => {
+  if (input && typeof input.repeat === "number" && input.repeat > 0 && input.macro) {
+    return { repeat: input.repeat, macro: processMacro(input.macro) };
+  }
+  return null;
+}
 
 const allProcessors = [
   checkAndProcessText,
   checkAndProcessDelay,
   checkAndProcessWait,
   checkAndProcessWaitTimeout,
+  checkAndProcessRepeat,
 ];
 
 const checkAndProcessAll = (input) => {
@@ -39,14 +46,21 @@ const checkAndProcessAll = (input) => {
   return result;
 }
 
-const processInput = (input) => {
+const processMacro = (macro) => {
+  if (!(macro instanceof Array)) {
+    macro = [macro];
+  }
+  return macro.map(input => processStep(input)).filter(Boolean);
+};
+
+const processStep = (input) => {
   let result = null;
   switch (typeof input) {
     case "string":
       result = checkAndProcessText({ text: input })
       break;
     case "number":
-      result = checkAndProcessDelay({ text: input })
+      result = checkAndProcessDelay({ delay: input })
       break;
     case "object":
       result = checkAndProcessAll(input);
@@ -57,16 +71,13 @@ const processInput = (input) => {
 const inputJson = JSON.parse(readFileSync(inputPath).toString());
 
 let entries = inputJson.macros.map(entry => {
-  let [name, inputs] = Object.entries(entry)[0];
-  if (!(inputs instanceof Array)) {
-    inputs = [inputs];
-  }
-  return { name, input: inputs.map(input => processInput(input)).filter(Boolean) };
+  let [name, macro] = Object.entries(entry)[0];
+  return { name, macro: processMacro(macro) };
 });
 
 const generateDefine = () => `#define MAX_ENTRIES ${entries.length}`
 
-const generateInput = (input) => {
+const generateStep = (input, level = 0) => {
   if (input.text) {
     return `      Keyboard.print(${JSON.stringify(input.text)});`
   }
@@ -79,6 +90,10 @@ const generateInput = (input) => {
   if (input.waitTimeout) {
     return `      waitForAnyKey(${input.waitTimeout});`
   }
+  if (input.repeat) {
+    return `      for(int i${level}=0;i${level}<${input.repeat};i${level}++){\n${input.macro.map(step => generateStep(step)).join("\n")}\n      }`
+  }
+  throw new Error("Unable to generate step: " + JSON.stringify(input));
 }
 
 const generateNameCases = () => entries.map(({ name }, i) => `    case ${i}:
@@ -87,8 +102,8 @@ const generateNameCases = () => entries.map(({ name }, i) => `    case ${i}:
       lcd.write(byte(RIGHT_ARROW));
       break;`).join("\n");
 
-const generateSelectionCases = () => entries.map(({ input }, i) => `    case ${i}:
-${input.map(input => generateInput(input)).join("\n")}
+const generateSelectionCases = () => entries.map(({ macro }, i) => `    case ${i}:
+${macro.map(step => generateStep(step)).join("\n")}
       break;`).join("\n");
 
 const generateStartMessage = () => {
