@@ -27,12 +27,20 @@ const checkAndProcessRepeat = (input) => {
   return null;
 }
 
+const checkAndProcessRepeatHold = (input) => {
+  if (input && input.repeatHold === true && input.macro) {
+    return { repeatHold: input.repeatHold, macro: processMacro(input.macro) };
+  }
+  return null;
+}
+
 const allProcessors = [
   checkAndProcessText,
   checkAndProcessDelay,
   checkAndProcessWait,
   checkAndProcessWaitTimeout,
   checkAndProcessRepeat,
+  checkAndProcessRepeatHold
 ];
 
 const checkAndProcessAll = (input) => {
@@ -91,7 +99,24 @@ const generateStep = (input, level = 0) => {
     return `      waitForAnyKey(${input.waitTimeout});`
   }
   if (input.repeat) {
-    return `      for(int i${level}=0;i${level}<${input.repeat};i${level}++){\n${input.macro.map(step => generateStep(step)).join("\n")}\n      }`
+    return `      for(int i${level}=0;i${level}<${input.repeat};i${level}++){\n${input.macro.map(step => generateStep(step, level + 1)).join("\n")}\n      }`
+  }
+  if (input.repeatHold) {
+    return `      printMenuBottom("Hold ");
+      lcd.write(byte(RIGHT_ARROW));
+      do {
+        key = readKey();
+      } while (key == NONE);
+      printMenuBottom("Release ");
+      lcd.write(byte(RIGHT_ARROW));
+      while (key == RIGHT) {
+${input.macro.map(step => generateStep(step, level + 1)).join("\n")}
+        key = readKey();
+      };
+      printMenuBottom("Running");
+      while (key != NONE) {
+        key = readKey();
+      };`
   }
   throw new Error("Unable to generate step: " + JSON.stringify(input));
 }

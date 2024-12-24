@@ -212,6 +212,7 @@ void printCurrentMenuSelection() {
 }
 
 void runCurrentSelection() {
+  byte key = NONE;
   printMenuBottom("Running");
   switch (position) {
 //{{RUN_SELECTION}}
