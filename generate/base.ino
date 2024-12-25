@@ -217,7 +217,7 @@ void runCurrentSelection() {
   switch (position) {
 //{{RUN_SELECTION}}
   }
-  printMenuBottom("");
+  Keyboard.releaseAll();
 }
 
 void nextSelection() {
@@ -244,10 +244,10 @@ void runMenu(byte key) {
     } else if (key == DOWN) {
       nextSelection();
       printCurrentMenuSelection();
-    } else if (key == LEFT) {
+    } else if (key == LEFT || key == SELECT) {
       currentRunner = runStart;
       loadStart();
-    } else if (key == RIGHT || key == SELECT) {
+    } else if (key == RIGHT) {
       runCurrentSelection();
       printCurrentMenuSelection();
     }

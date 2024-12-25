@@ -79,5 +79,9 @@ The JSON with the macro definitions should be an object with the given propertie
 * `delay` - delays the macro run by the given time amount (in milliseconds).
 * `wait` - waits for a key press on the arduino before continuing running.
 * `waitTimeout` - waits for a key press on the arduino or for the given amount of time to pass, whichever is first, before continuing running.
+* `click` - presses and releases all given keys.
+* `press` - presses all given keys.
+* `release` - releases all given keys.
 * `repeat` - Repeats the given macro the desired amount of times.
 * `repeatHold` - Repeats the given macro while the '>' is being pressed.
+* `code` - inserts the given string or string array directly as code on the generated file.

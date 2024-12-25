@@ -14,12 +14,146 @@ if (!inputPath) {
   process.exit(3);
 }
 
+const keyStartMap = {
+  "KEY_L_": "KEY_LEFT_",
+  "KEY_LT_": "KEY_LEFT_",
+  "KEY_R_": "KEY_RIGHT_",
+  "KEY_RT_": "KEY_RIGHT_",
+  "KEY_NUM_": "KEY_KP_",
+  "KEY_NUM_PAD_": "KEY_KP_",
+  "KEY_NUMPAD_": "KEY_KP_",
+}
+
+const keyEndMap = {
+  "OPTION": "ALT",
+  "OPT": "ALT",
+  "CONTROL": "CTRL",
+  "WIN": "GUI",
+  "WINDOWS": "GUI",
+  "COMMAND": "GUI",
+  "COM": "GUI",
+  "SUPER": "GUI"
+}
+
+const keyMap = {
+  "KEY_ALT": "KEY_LEFT_ALT",
+  "KEY_SHIFT": "KEY_LEFT_SHIFT",
+  "KEY_CTRL": "KEY_LEFT_CTRL",
+  "KEY_GUI": "KEY_LEFT_GUI",
+  "KEY_BS": "KEY_BACKSPACE",
+  "KEY_CAPSLOCK": "KEY_CAPS_LOCK",
+  "KEY_CL": "KEY_CAPS_LOCK",
+  "KEY_ALT_GR": "KEY_RIGHT_ALT",
+  "KEY_ALTGR": "KEY_RIGHT_ALT",
+  "KEY_INS": "KEY_INSERT",
+  "KEY_DEL": "KEY_DELETE",
+  "KEY_PG_UP": "KEY_PAGE_UP",
+  "KEY_PGUP": "KEY_PAGE_UP",
+  "KEY_PG_DOWN": "KEY_PAGE_DOWN",
+  "KEY_PG_DN": "KEY_PAGE_DOWN",
+  "KEY_PGDOWN": "KEY_PAGE_DOWN",
+  "KEY_PGDN": "KEY_PAGE_DOWN",
+  "KEY_UP": "KEY_UP_ARROW",
+  "KEY_DOWN": "KEY_DOWN_ARROW",
+  "KEY_DN": "KEY_DOWN_ARROW",
+  "KEY_LEFT": "KEY_LEFT_ARROW",
+  "KEY_LT": "KEY_LEFT_ARROW",
+  "KEY_RIGHT": "KEY_RIGHT_ARROW",
+  "KEY_RT": "KEY_RIGHT_ARROW",
+  "KEY_ESCAPE": "KEY_ESC",
+  "KEY_ENTER": "KEY_RETURN",
+  "KEY_PRT_SC": "KEY_PRINT_SCREEN",
+  "KEY_PRTSC": "KEY_PRINT_SCREEN",
+  "KEY_PS": "KEY_PRINT_SCREEN",
+  "KEY_SL": "KEY_SCROLL_LOCK",
+  "KEY_NUMBER_LOCK": "KEY_NUM_LOCK",
+  "KEY_NUMLOCK": "KEY_NUM_LOCK",
+  "KEY_NL": "KEY_NUM_LOCK",
+  "KEY_KP_/": "KEY_KP_SLASH",
+  "KEY_KP_*": "KEY_KP_ASTERISK",
+  "KEY_KP_-": "KEY_KP_MINUS",
+  "KEY_KP_+": "KEY_KP_PLUS",
+}
+
+const processKeyInput = (input) => {
+  if (typeof input === "string" && input.length) {
+    if (input.length == 1) {
+      return `'${input}'`
+    }
+    let value = input.toUpperCase();
+    if (!value.startsWith("KEY_")) {
+      value = "KEY_" + value;
+    }
+    for (const [k, v] of Object.entries(keyStartMap)) {
+      if (value.startsWith(k)) {
+        value = value.replace(k, v);
+        break;
+      }
+    }
+    for (const [k, v] of Object.entries(keyEndMap)) {
+      if (value.endsWith(k)) {
+        value = value.replace(k, v);
+        break;
+      }
+    }
+    if (keyMap[value]) {
+      value = keyMap[value];
+    }
+    return value;
+  }
+  return null;
+}
+
+const processAllKeysInput = (input) => {
+  if (input) {
+    if (!(input instanceof Array)) {
+      input = [input];
+    }
+    input = input.map(key => processKeyInput(key)).filter(Boolean);
+    if (input.length > 0) {
+      return input;
+    }
+  }
+  return null;
+}
+
 const relative = (...parts) => { parts.unshift(import.meta.dirname); return parts.join(sep) };
 
 const checkAndProcessText = (input) => input && typeof input.text === "string" && input.text.length > 0 ? { text: input.text } : null;
 const checkAndProcessDelay = (input) => input && typeof input.delay === "number" && input.delay > 0 ? { delay: Math.trunc(input.delay) } : null;
 const checkAndProcessWait = (input) => input && input.wait ? { wait: true } : null;
 const checkAndProcessWaitTimeout = (input) => input && typeof input.waitTimeout === "number" && input.waitTimeout > 0 ? { waitTimeout: Math.trunc(input.waitTimeout) } : null;
+
+const checkAndProcessClick = (input) => {
+  if (input && input.click) {
+    let keys = processAllKeysInput(input.click);
+    if (keys) {
+      return { click: keys };
+    }
+  }
+  return null;
+}
+
+const checkAndProcessPress = (input) => {
+  if (input && input.press) {
+    let keys = processAllKeysInput(input.press);
+    if (keys) {
+      return { press: keys };
+    }
+  }
+  return null;
+}
+
+const checkAndProcessRelease = (input) => {
+  if (input && input.release) {
+    let keys = processAllKeysInput(input.release);
+    if (keys) {
+      return { release: keys };
+    }
+  }
+  return null;
+}
+
 const checkAndProcessRepeat = (input) => {
   if (input && typeof input.repeat === "number" && input.repeat > 0 && input.macro) {
     return { repeat: input.repeat, macro: processMacro(input.macro) };
@@ -34,13 +168,29 @@ const checkAndProcessRepeatHold = (input) => {
   return null;
 }
 
+const checkAndProcessCode = (input) => {
+  if (input && input.code) {
+    if (input.code instanceof Array) {
+      input.code = input.code.map(line => line.toString()).filter(Boolean).join("\n");
+    }
+    if (typeof input.code === "string" && input.code.length > 0) {
+      return { code: input.code };
+    }
+  }
+  return null;
+}
+
 const allProcessors = [
   checkAndProcessText,
   checkAndProcessDelay,
   checkAndProcessWait,
   checkAndProcessWaitTimeout,
+  checkAndProcessClick,
+  checkAndProcessPress,
+  checkAndProcessRelease,
   checkAndProcessRepeat,
-  checkAndProcessRepeatHold
+  checkAndProcessRepeatHold,
+  checkAndProcessCode,
 ];
 
 const checkAndProcessAll = (input) => {
@@ -87,36 +237,48 @@ const generateDefine = () => `#define MAX_ENTRIES ${entries.length}`
 
 const generateStep = (input, level = 0) => {
   if (input.text) {
-    return `      Keyboard.print(${JSON.stringify(input.text)});`
+    return `        Keyboard.print(${JSON.stringify(input.text)});`
   }
   if (input.delay) {
-    return `      delay(${input.delay});`
+    return `        delay(${input.delay});`
   }
   if (input.wait) {
-    return `      waitForAnyKey();`
+    return `        waitForAnyKey();`
   }
   if (input.waitTimeout) {
-    return `      waitForAnyKey(${input.waitTimeout});`
+    return `        waitForAnyKey(${input.waitTimeout});`
+  }
+  if (input.click) {
+    return `${input.click.map(key => `        Keyboard.press(${key});`).join("\n")}\n${input.click.map(key => `      Keyboard.release(${key});`).join("\n")}`
+  }
+  if (input.press) {
+    return input.press.map(key => `        Keyboard.press(${key});`).join("\n");
+  }
+  if (input.release) {
+    return input.release.map(key => `      Keyboard.release(${key});`).join("\n");
   }
   if (input.repeat) {
-    return `      for(int i${level}=0;i${level}<${input.repeat};i${level}++){\n${input.macro.map(step => generateStep(step, level + 1)).join("\n")}\n      }`
+    return `        for(int i${level}=0;i${level}<${input.repeat};i${level}++){\n${input.macro.map(step => generateStep(step, level + 1)).join("\n")}\n      }`
   }
   if (input.repeatHold) {
-    return `      printMenuBottom("Hold ");
-      lcd.write(byte(RIGHT_ARROW));
-      do {
-        key = readKey();
-      } while (key == NONE);
-      printMenuBottom("Release ");
-      lcd.write(byte(RIGHT_ARROW));
-      while (key == RIGHT) {
+    return `        printMenuBottom("Hold ");
+        lcd.write(byte(RIGHT_ARROW));
+        do {
+          key = readKey();
+        } while (key == NONE);
+        printMenuBottom("Release ");
+        lcd.write(byte(RIGHT_ARROW));
+        while (key == RIGHT) {
 ${input.macro.map(step => generateStep(step, level + 1)).join("\n")}
-        key = readKey();
-      };
-      printMenuBottom("Running");
-      while (key != NONE) {
-        key = readKey();
-      };`
+          key = readKey();
+        };
+        printMenuBottom("Running");
+        while (key != NONE) {
+          key = readKey();
+        };`
+  }
+  if (input.code) {
+    return "        " + input.code.replaceAll(/\n/gm, "\n        ");
   }
   throw new Error("Unable to generate step: " + JSON.stringify(input));
 }
@@ -128,8 +290,10 @@ const generateNameCases = () => entries.map(({ name }, i) => `    case ${i}:
       break;`).join("\n");
 
 const generateSelectionCases = () => entries.map(({ macro }, i) => `    case ${i}:
+      {
 ${macro.map(step => generateStep(step)).join("\n")}
-      break;`).join("\n");
+        break;
+      }`).join("\n");
 
 const generateStartMessage = () => {
   let message = typeof inputJson.startMessage == "string" ? inputJson.startMessage : "Uno R4 Macro";
@@ -161,10 +325,3 @@ writeFileSync(relative("uno-r4-macro.ino"), baseFile.replaceAll(/ *\/\/\{\{(.+)\
   }
   return `//{{${id}_START}}\n${generatedText}\n//{{${id}_END}}`;
 }));
-
-//TODO
-
-//Force a max size on the written text or make the menu be scrollable
-//add 'keys' to define a specific key press
-//add 'delaytext' to write some text with a certain delay
-//add 'time' to show and write the current time of the macropad
