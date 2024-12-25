@@ -82,6 +82,12 @@ The JSON with the macro definitions should be an object with the given propertie
 * `click` - presses and releases all given keys.
 * `press` - presses all given keys.
 * `release` - releases all given keys.
+* `mouseClick` - presses and releases all given mouse keys.
+* `mousePress` - presses all given mouse keys.
+* `mouseRelease` - releases all given mouse keys.
+* `mouseMove` - moves the mouse the given \[x,y\] amount.
+* `mouseScroll` - scrolls the mouse the given amount.
 * `repeat` - Repeats the given macro the desired amount of times.
 * `repeatHold` - Repeats the given macro while the '>' is being pressed.
+* `repeatUntilClick` - Repeats the given macro until the '>' is pressed.
 * `code` - inserts the given string or string array directly as code on the generated file.

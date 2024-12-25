@@ -1,4 +1,5 @@
 #include <Keyboard.h>
+#include <Mouse.h>
 #include <LiquidCrystal.h>
 
 #define UP 1
@@ -257,7 +258,7 @@ void runMenu(byte key) {
 //Start Function
 
 void loadStart() {
-  //{{START_MESSAGE}}
+//{{START_MESSAGE}}
   printBottom(" Press any key");
 }
 
@@ -277,6 +278,7 @@ void setup() {
   lcd.createChar(RIGHT_ARROW, rightArrow);
   lcd.createChar(NO_ARROW, noArrow);
   Keyboard.begin();
+  Mouse.begin();
   currentRunner = runStart;
   loadStart();
 }

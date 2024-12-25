@@ -117,6 +117,46 @@ const processAllKeysInput = (input) => {
   return null;
 }
 
+const mouseKeyMap = {
+  "MOUSE_LT": "MOUSE_LEFT",
+  "MOUSE_L": "MOUSE_LEFT",
+  "MOUSE_RT": "MOUSE_RIGHT",
+  "MOUSE_R": "MOUSE_RIGHT",
+  "MOUSE_MID": "MOUSE_MIDDLE",
+  "MOUSE_MD": "MOUSE_MIDDLE",
+  "MOUSE_M": "MOUSE_MIDDLE",
+}
+
+const processMouseKeyInput = (input) => {
+  if (typeof input === "string" && input.length) {
+    if (input.length == 1) {
+      return `'${input}'`
+    }
+    let value = input.toUpperCase();
+    if (!value.startsWith("MOUSE_")) {
+      value = "MOUSE_" + value;
+    }
+    if (mouseKeyMap[value]) {
+      value = mouseKeyMap[value];
+    }
+    return value;
+  }
+  return null;
+}
+
+const processAllMouseKeysInput = (input) => {
+  if (input) {
+    if (!(input instanceof Array)) {
+      input = [input];
+    }
+    input = input.map(key => processMouseKeyInput(key)).filter(Boolean);
+    if (input.length > 0) {
+      return input;
+    }
+  }
+  return null;
+}
+
 const relative = (...parts) => { parts.unshift(import.meta.dirname); return parts.join(sep) };
 
 const checkAndProcessText = (input) => input && typeof input.text === "string" && input.text.length > 0 ? { text: input.text } : null;
@@ -154,6 +194,51 @@ const checkAndProcessRelease = (input) => {
   return null;
 }
 
+const checkAndProcessMouseClick = (input) => {
+  if (input && input.mouseClick) {
+    let keys = processAllMouseKeysInput(input.mouseClick);
+    if (keys) {
+      return { mouseClick: keys };
+    }
+  }
+  return null;
+}
+
+const checkAndProcessMousePress = (input) => {
+  if (input && input.mousePress) {
+    let keys = processAllMouseKeysInput(input.mousePress);
+    if (keys) {
+      return { mousePress: keys };
+    }
+  }
+  return null;
+}
+
+const checkAndProcessMouseRelease = (input) => {
+  if (input && input.mouseRelease) {
+    let keys = processAllMouseKeysInput(input.mouseRelease);
+    if (keys) {
+      return { mouseRelease: keys };
+    }
+  }
+  return null;
+}
+
+const checkAndProcessMouseMove = (input) => {
+  if (input && (input.mouseMove instanceof Array) && input.mouseMove.length == 2 && typeof input.mouseMove[0] == "number" && typeof input.mouseMove[1] == "number") {
+    console.log(input)
+    return { mouseMove: [Math.trunc(input.mouseMove[0]), Math.trunc(input.mouseMove[1])] };
+  }
+  return null;
+}
+
+const checkAndProcessMouseScroll = (input) => {
+  if (input && typeof input.mouseScroll == "number" && input.mouseScroll != 0) {
+    return { mouseScroll: Math.trunc(input.mouseScroll) };
+  }
+  return null;
+}
+
 const checkAndProcessRepeat = (input) => {
   if (input && typeof input.repeat === "number" && input.repeat > 0 && input.macro) {
     return { repeat: input.repeat, macro: processMacro(input.macro) };
@@ -164,6 +249,13 @@ const checkAndProcessRepeat = (input) => {
 const checkAndProcessRepeatHold = (input) => {
   if (input && input.repeatHold === true && input.macro) {
     return { repeatHold: input.repeatHold, macro: processMacro(input.macro) };
+  }
+  return null;
+}
+
+const checkAndProcessRepeatUntilClick = (input) => {
+  if (input && input.repeatUntilClick === true && input.macro) {
+    return { repeatUntilClick: input.repeatUntilClick, macro: processMacro(input.macro) };
   }
   return null;
 }
@@ -188,8 +280,14 @@ const allProcessors = [
   checkAndProcessClick,
   checkAndProcessPress,
   checkAndProcessRelease,
+  checkAndProcessMouseClick,
+  checkAndProcessMousePress,
+  checkAndProcessMouseRelease,
+  checkAndProcessMouseMove,
+  checkAndProcessMouseScroll,
   checkAndProcessRepeat,
   checkAndProcessRepeatHold,
+  checkAndProcessRepeatUntilClick,
   checkAndProcessCode,
 ];
 
@@ -249,13 +347,28 @@ const generateStep = (input, level = 0) => {
     return `        waitForAnyKey(${input.waitTimeout});`
   }
   if (input.click) {
-    return `${input.click.map(key => `        Keyboard.press(${key});`).join("\n")}\n${input.click.map(key => `      Keyboard.release(${key});`).join("\n")}`
+    return `${input.click.map(key => `        Keyboard.press(${key});`).join("\n")}\n${input.click.map(key => `        Keyboard.release(${key});`).join("\n")}`
   }
   if (input.press) {
     return input.press.map(key => `        Keyboard.press(${key});`).join("\n");
   }
   if (input.release) {
-    return input.release.map(key => `      Keyboard.release(${key});`).join("\n");
+    return input.release.map(key => `        Keyboard.release(${key});`).join("\n");
+  }
+  if (input.mouseClick) {
+    return `${input.mouseClick.map(key => `        Mouse.press(${key});`).join("\n")}\n${input.mouseClick.map(key => `        Mouse.release(${key});`).join("\n")}`
+  }
+  if (input.mousePress) {
+    return input.mousePress.map(key => `        Mouse.press(${key});`).join("\n");
+  }
+  if (input.mouseRelease) {
+    return input.mouseRelease.map(key => `        Mouse.release(${key});`).join("\n");
+  }
+  if (input.mouseMove) {
+    return `        Mouse.move(${input.mouseMove});`
+  }
+  if (input.mouseScroll) {
+    return `        Mouse.move(0,0,${input.mouseScroll});`
   }
   if (input.repeat) {
     return `        for(int i${level}=0;i${level}<${input.repeat};i${level}++){\n${input.macro.map(step => generateStep(step, level + 1)).join("\n")}\n      }`
@@ -269,13 +382,27 @@ const generateStep = (input, level = 0) => {
         printMenuBottom("Release ");
         lcd.write(byte(RIGHT_ARROW));
         while (key == RIGHT) {
-${input.macro.map(step => generateStep(step, level + 1)).join("\n")}
+${input.macro.map(step => generateStep(step, level)).join("\n")}
           key = readKey();
         };
         printMenuBottom("Running");
         while (key != NONE) {
           key = readKey();
         };`
+  }
+  if (input.repeatUntilClick) {
+    return `        printMenuBottom("Press ");
+        lcd.write(byte(RIGHT_ARROW));
+        do {
+${input.macro.map(step => generateStep(step, level)).join("\n")}
+          key = readKey();
+        } while (key != RIGHT);
+        printMenuBottom("Release ");
+        lcd.write(byte(RIGHT_ARROW));
+        while (key != NONE) {
+          key = readKey();
+        };
+        printMenuBottom("Running");`
   }
   if (input.code) {
     return "        " + input.code.replaceAll(/\n/gm, "\n        ");
