@@ -14,6 +14,7 @@
 #define RIGHT_ARROW 3
 #define NO_ARROW 4
 #define KEY_DEBOUNCE 10
+#define SEND_CLICK_AFTER 300
 //{{DEFINE}}
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
@@ -59,6 +60,11 @@ byte getLastKey() {
       current_key_time = millis();
     } else if (key != pressed_key && millis() - current_key_time >= KEY_DEBOUNCE) {
       pressed_key = key;
+    }else if(key == pressed_key && millis() - current_key_time >= SEND_CLICK_AFTER){
+      key = pressed_key;
+      pressed_key = NONE;
+      current_key = NONE;
+       return key;
     }
     return NONE;
   } else {
