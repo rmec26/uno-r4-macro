@@ -23,7 +23,7 @@ This project allows you to turn an Arduino Uno R4 and a LCD Keypad Shield into a
 The JSON with the macro definitions should be an object with the given properties.
 
 * `startMessage`:`string` - (Optional) Defines the message shown at the start of the device.
-* `macros`:`macro[]` - Array containg the macro definitions available on the device.
+* `macros`:`Macro[]` - Array containg the macro definitions available on the device.
 
 
 ### Example of a macro definition file
@@ -75,19 +75,21 @@ The JSON with the macro definitions should be an object with the given propertie
 
 ### Macro commands
 
-* `text` - writes the given string.
-* `delay` - delays the macro run by the given time amount (in milliseconds).
-* `wait` - waits for a key press on the arduino before continuing running.
-* `waitTimeout` - waits for a key press on the arduino or for the given amount of time to pass, whichever is first, before continuing running.
-* `click` - presses and releases all given keys.
-* `press` - presses all given keys.
-* `release` - releases all given keys.
-* `mouseClick` - presses and releases all given mouse keys.
-* `mousePress` - presses all given mouse keys.
-* `mouseRelease` - releases all given mouse keys.
-* `mouseMove` - moves the mouse the given \[x,y\] amount.
-* `mouseScroll` - scrolls the mouse the given amount.
-* `repeat` - Repeats the given macro the desired amount of times.
-* `repeatHold` - Repeats the given macro while the '>' is being pressed.
-* `repeatUntilClick` - Repeats the given macro until the '>' is pressed.
-* `code` - inserts the given string or string array directly as code on the generated file.
+* `text`:`{text:string}` - writes the given string.
+* `delay`:`{delay:number}` - delays the macro run by the given amount of time (in milliseconds).
+* `wait`
+  * `{wait:true}` - waits for a '>' key press on the arduino before continuing running.
+  * `{wait:number}` - waits for a '>' key press on the arduino or for the given amount of time (in milliseconds) to pass, whichever is first, before continuing running.
+* `click`:`{click:Key|Key[]}` - presses and releases all given keys.
+* `press`:`{press:Key|Key[]}` - presses all given keys.
+* `release`:`{release:Key|Key[]}` - releases all given keys.
+* `mouseClick`:`{mouseClick:MouseKey|MouseKey[]}` - presses and releases all given mouse keys.
+* `mousePress`:`{mousePress:MouseKey|MouseKey[]}` - presses all given mouse keys.
+* `mouseRelease`:`{mouseRelease:MouseKey|MouseKey[]}` - releases all given mouse keys.
+* `mouseMove`:`{mouseMove:[number,number]}` - moves the mouse the given \[x,y\] amount.
+* `mouseScroll`:`{mouseScroll:number}` - scrolls the mouse the given amount.
+* `repeat`
+  * `{repeat:number,macro:MacroStep|MacroStep[]}` -  Repeats the given macro the desired amount of times.
+  * `{repeat:"hold",macro:MacroStep|MacroStep[]}` -  Waits for '>' to be pressed and repeats the given macro while is being pressed.
+  * `{repeat:"click",macro:MacroStep|MacroStep[]}` -  Repeats the given macro until the '>' is pressed.
+* `code`:`{code:string|string[]}` - inserts the given string or string array directly as code on the generated file.

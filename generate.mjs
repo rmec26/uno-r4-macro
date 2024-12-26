@@ -172,7 +172,6 @@ const checkAndProcessWait = (input) => {
   }
   return null;
 };
-const checkAndProcessWaitTimeout = (input) => input && typeof input.waitTimeout === "number" && input.waitTimeout > 0 ? { waitTimeout: Math.trunc(input.waitTimeout) } : null;
 
 const checkAndProcessClick = (input) => {
   if (input && input.click) {
@@ -264,20 +263,6 @@ const checkAndProcessRepeat = (input) => {
   return null;
 }
 
-const checkAndProcessRepeatHold = (input) => {
-  if (input && input.repeatHold === true && input.macro) {
-    return { repeatHold: input.repeatHold, macro: processMacro(input.macro) };
-  }
-  return null;
-}
-
-const checkAndProcessRepeatUntilClick = (input) => {
-  if (input && input.repeatUntilClick === true && input.macro) {
-    return { repeatUntilClick: input.repeatUntilClick, macro: processMacro(input.macro) };
-  }
-  return null;
-}
-
 const checkAndProcessCode = (input) => {
   if (input && input.code) {
     if (input.code instanceof Array) {
@@ -294,7 +279,6 @@ const allProcessors = [
   checkAndProcessText,
   checkAndProcessDelay,
   checkAndProcessWait,
-  checkAndProcessWaitTimeout,
   checkAndProcessClick,
   checkAndProcessPress,
   checkAndProcessRelease,
@@ -304,8 +288,6 @@ const allProcessors = [
   checkAndProcessMouseMove,
   checkAndProcessMouseScroll,
   checkAndProcessRepeat,
-  checkAndProcessRepeatHold,
-  checkAndProcessRepeatUntilClick,
   checkAndProcessCode,
 ];
 
@@ -409,7 +391,7 @@ ${input.macro.map(step => generateStep(step, level)).join("\n")}
         };`
   }
   if (input.repeatUntilClick) {
-    return `        printMenuBottom("Press ");
+    return `        printMenuBottom("Stop with ");
         lcd.write(byte(RIGHT_ARROW));
         do {
 ${input.macro.map(step => generateStep(step, level)).join("\n")}
