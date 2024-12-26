@@ -203,6 +203,15 @@ void printMenuArrows() {
   }
 }
 
+void printRunningMenu() {
+  lcd.setCursor(0, 0);
+  lcd.write(byte(RIGHT_ARROW));
+  lcd.write(" ");
+  lcd.setCursor(0, 1);
+  lcd.write(byte(RIGHT_ARROW));
+  lcd.write(" Running");
+}
+
 //Menu Functions
 
 void printCurrentMenuSelection() {
@@ -214,7 +223,7 @@ void printCurrentMenuSelection() {
 
 void runCurrentSelection() {
   byte key = NONE;
-  printMenuBottom("Running");
+  printRunningMenu();
   switch (position) {
 //{{RUN_SELECTION}}
   }
@@ -259,11 +268,12 @@ void runMenu(byte key) {
 
 void loadStart() {
 //{{START_MESSAGE}}
-  printBottom(" Press any key");
+  printBottom("    Click ");
+  lcd.write(byte(RIGHT_ARROW));
 }
 
 void runStart(byte key) {
-  if (key != NONE) {
+  if (key == RIGHT) {
     currentRunner = runMenu;
     loadMenu();
   }

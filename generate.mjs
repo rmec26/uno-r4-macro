@@ -161,7 +161,17 @@ const relative = (...parts) => { parts.unshift(import.meta.dirname); return part
 
 const checkAndProcessText = (input) => input && typeof input.text === "string" && input.text.length > 0 ? { text: input.text } : null;
 const checkAndProcessDelay = (input) => input && typeof input.delay === "number" && input.delay > 0 ? { delay: Math.trunc(input.delay) } : null;
-const checkAndProcessWait = (input) => input && input.wait ? { wait: true } : null;
+const checkAndProcessWait = (input) => {
+  if (input) {
+    if (input.wait === true) {
+      return { wait: true };
+    }
+    if (typeof input.wait === "number" && input.wait > 0) {
+      return { waitTimeout: Math.trunc(input.wait) }
+    }
+  }
+  return null;
+};
 const checkAndProcessWaitTimeout = (input) => input && typeof input.waitTimeout === "number" && input.waitTimeout > 0 ? { waitTimeout: Math.trunc(input.waitTimeout) } : null;
 
 const checkAndProcessClick = (input) => {
@@ -226,7 +236,6 @@ const checkAndProcessMouseRelease = (input) => {
 
 const checkAndProcessMouseMove = (input) => {
   if (input && (input.mouseMove instanceof Array) && input.mouseMove.length == 2 && typeof input.mouseMove[0] == "number" && typeof input.mouseMove[1] == "number") {
-    console.log(input)
     return { mouseMove: [Math.trunc(input.mouseMove[0]), Math.trunc(input.mouseMove[1])] };
   }
   return null;
@@ -240,8 +249,17 @@ const checkAndProcessMouseScroll = (input) => {
 }
 
 const checkAndProcessRepeat = (input) => {
-  if (input && typeof input.repeat === "number" && input.repeat > 0 && input.macro) {
-    return { repeat: input.repeat, macro: processMacro(input.macro) };
+  if (input && input.macro) {
+    if (typeof input.repeat === "number" && input.repeat > 0) {
+      return { repeat: input.repeat, macro: processMacro(input.macro) };
+    } else if (typeof input.repeat === "string") {
+      switch (input.repeat.toLowerCase()) {
+        case "hold":
+          return { repeatHold: true, macro: processMacro(input.macro) };
+        case "click":
+          return { repeatUntilClick: true, macro: processMacro(input.macro) };
+      }
+    }
   }
   return null;
 }
