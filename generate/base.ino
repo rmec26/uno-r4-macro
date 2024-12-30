@@ -8,11 +8,11 @@
 #define RIGHT 4
 #define SELECT 5
 #define NONE 0
-#define UP_ARROW 0
-#define DOWN_ARROW 1
-#define LEFT_ARROW 2
-#define RIGHT_ARROW 3
-#define NO_ARROW 4
+#define UP_ICON 0
+#define DOWN_ICON 1
+#define BACK_ICON 2
+#define CONTINUE_ICON 3
+#define NONE_ICON 4
 #define KEY_DEBOUNCE 10
 #define SEND_CLICK_AFTER 300
 //{{DEFINE}}
@@ -77,7 +77,7 @@ byte getLastKey() {
   }
 }
 
-byte upArrow[8] = {
+byte upIcon[8] = {
   0b00000,
   0b00000,
   0b00100,
@@ -88,7 +88,7 @@ byte upArrow[8] = {
   0b00000
 };
 
-byte downArrow[8] = {
+byte downIcon[8] = {
   0b00000,
   0b00000,
   0b10001,
@@ -99,7 +99,7 @@ byte downArrow[8] = {
   0b00000
 };
 
-byte noArrow[8] = {
+byte noneIcon[8] = {
   0b00000,
   0b00000,
   0b00100,
@@ -110,7 +110,7 @@ byte noArrow[8] = {
   0b00000
 };
 
-byte leftArrow[8] = {
+byte backIcon[8] = {
   0b00000,
   0b00000,
   0b00110,
@@ -121,14 +121,14 @@ byte leftArrow[8] = {
   0b00000
 };
 
-byte rightArrow[8] = {
+byte continueIcon[8] = {
   0b00000,
   0b00000,
+  0b01000,
   0b01100,
-  0b00110,
-  0b00011,
-  0b00110,
+  0b01110,
   0b01100,
+  0b01000,
   0b00000
 };
 
@@ -217,31 +217,31 @@ void printMenuArrows() {
   switch (position) {
     case 0:
       lcd.setCursor(0, 0);
-      lcd.write(byte(NO_ARROW));
+      lcd.write(byte(NONE_ICON));
       lcd.setCursor(0, 1);
-      lcd.write(byte(DOWN_ARROW));
+      lcd.write(byte(DOWN_ICON));
       break;
     case MAX_ENTRIES - 1:
       lcd.setCursor(0, 0);
-      lcd.write(byte(UP_ARROW));
+      lcd.write(byte(UP_ICON));
       lcd.setCursor(0, 1);
-      lcd.write(byte(NO_ARROW));
+      lcd.write(byte(NONE_ICON));
       break;
     default:
       lcd.setCursor(0, 0);
-      lcd.write(byte(UP_ARROW));
+      lcd.write(byte(UP_ICON));
       lcd.setCursor(0, 1);
-      lcd.write(byte(DOWN_ARROW));
+      lcd.write(byte(DOWN_ICON));
       break;
   }
 }
 
 void printRunningMenu() {
   lcd.setCursor(0, 0);
-  lcd.write(byte(RIGHT_ARROW));
+  lcd.write(byte(CONTINUE_ICON));
   lcd.write(" ");
   lcd.setCursor(0, 1);
-  lcd.write(byte(RIGHT_ARROW));
+  lcd.write(byte(CONTINUE_ICON));
   lcd.write(" Running");
 }
 
@@ -302,7 +302,7 @@ void runMenu(byte key) {
 void loadStart() {
 //{{START_MESSAGE}}
   printBottom("    Click ");
-  lcd.write(byte(RIGHT_ARROW));
+  lcd.write(byte(CONTINUE_ICON));
 }
 
 void runStart(byte key) {
@@ -315,11 +315,11 @@ void runStart(byte key) {
 void setup() {
   lcd.begin(16, 2);
   printTop("Loading...");
-  lcd.createChar(UP_ARROW, upArrow);
-  lcd.createChar(DOWN_ARROW, downArrow);
-  lcd.createChar(LEFT_ARROW, leftArrow);
-  lcd.createChar(RIGHT_ARROW, rightArrow);
-  lcd.createChar(NO_ARROW, noArrow);
+  lcd.createChar(UP_ICON, upIcon);
+  lcd.createChar(DOWN_ICON, downIcon);
+  lcd.createChar(BACK_ICON, backIcon);
+  lcd.createChar(CONTINUE_ICON, continueIcon);
+  lcd.createChar(NONE_ICON, noneIcon);
   Keyboard.begin();
   Mouse.begin();
   currentRunner = runStart;

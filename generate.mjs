@@ -338,81 +338,88 @@ const ifSelectCode = `        if (key == SELECT) {
           return;
         }`;
 
-const stopMacroCode = `        key = readKey();\n${ifSelectCode}`;
+const ifSelectAndContinueCode = `${ifSelectCode}
+        if (key == RIGHT) {
+          waitForNoKey(CONTINUE_ICON);
+          break;
+        }`;
+
+// const stopMacroCode = `        key = readKey();\n${ifSelectCode}`;
 
 
-const generateStep = (input, level = 0) => {
+const generateStep = (input, level = 0, stopWithContinue = false) => {
+  let stopHandlingCode = `        key = readKey();\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}`;
   if (input.text) {//TODO turn into a loop for each letter and add the stop macro inside it
-    return `        Keyboard.print(${JSON.stringify(input.text)});\n${stopMacroCode}`
+    return `        Keyboard.print(${JSON.stringify(input.text)});\n${stopHandlingCode}`
   }
-  if (input.delay) {
+  if (input.delay) {//TODO make this work properly if stopWithContinue is true
     return `        if (delayOrCancel(${input.delay})) {
           waitForNoKey();
           return;
         }`
   }
   if (input.wait) {
-    return `        key = waitForAnyKey();\n${ifSelectCode}`
+    return `        key = waitForAnyKey();\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}`
   }
   if (input.waitTimeout) {
-    return `        key = waitForAnyKey(${input.waitTimeout});\n${ifSelectCode}`
+    return `        key = waitForAnyKey(${input.waitTimeout});\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}`
   }
   if (input.click) {
-    return `${input.click.map(key => `        Keyboard.press(${key});`).join("\n")}\n${input.click.map(key => `        Keyboard.release(${key});`).join("\n")}\n${stopMacroCode}`
+    return `${input.click.map(key => `        Keyboard.press(${key});`).join("\n")}\n${input.click.map(key => `        Keyboard.release(${key});`).join("\n")}\n${stopHandlingCode}`
   }
   if (input.press) {
-    return `${input.press.map(key => `        Keyboard.press(${key});`).join("\n")}\n${stopMacroCode}`;
+    return `${input.press.map(key => `        Keyboard.press(${key});`).join("\n")}\n${stopHandlingCode}`;
   }
   if (input.release) {
-    return `${input.release.map(key => `        Keyboard.release(${key});`).join("\n")}\n${stopMacroCode}`;
+    return `${input.release.map(key => `        Keyboard.release(${key});`).join("\n")}\n${stopHandlingCode}`;
   }
   if (input.mouseClick) {
-    return `${input.mouseClick.map(key => `        Mouse.press(${key});`).join("\n")}\n${input.mouseClick.map(key => `        Mouse.release(${key});`).join("\n")}\n${stopMacroCode}`
+    return `${input.mouseClick.map(key => `        Mouse.press(${key});`).join("\n")}\n${input.mouseClick.map(key => `        Mouse.release(${key});`).join("\n")}\n${stopHandlingCode}`
   }
   if (input.mousePress) {
-    return `${input.mousePress.map(key => `        Mouse.press(${key});`).join("\n")}\n${stopMacroCode}`;
+    return `${input.mousePress.map(key => `        Mouse.press(${key});`).join("\n")}\n${stopHandlingCode}`;
   }
   if (input.mouseRelease) {
-    return `${input.mouseRelease.map(key => `        Mouse.release(${key});`).join("\n")}\n${stopMacroCode}`;
+    return `${input.mouseRelease.map(key => `        Mouse.release(${key});`).join("\n")}\n${stopHandlingCode}`;
   }
   if (input.mouseMove) {
-    return `        Mouse.move(${input.mouseMove});\n${stopMacroCode}`
+    return `        Mouse.move(${input.mouseMove});\n${stopHandlingCode}`
   }
   if (input.mouseScroll) {
-    return `        Mouse.move(0,0,${input.mouseScroll});\n${stopMacroCode}`
+    return `        Mouse.move(0,0,${input.mouseScroll});\n${stopHandlingCode}`
   }
   if (input.repeat) {
     return `        for(int i${level}=0;i${level}<${input.repeat};i${level}++){\n${input.macro.map(step => generateStep(step, level + 1)).join("\n")}\n      }`
   }
-  if (input.repeatHold) {
+  if (input.repeatHold) {//TODO improve the key handling code to also check if the key is no longer being pressed for this loop
     return `        printMenuBottom("Hold ");
-        lcd.write(byte(RIGHT_ARROW));
+        lcd.write(byte(CONTINUE_ICON));
         do {
           key = readKey();
         } while (key != RIGHT && key != SELECT);
         ${ifSelectCode}
         printMenuBottom("Release ");
-        lcd.write(byte(RIGHT_ARROW));
+        lcd.write(byte(CONTINUE_ICON));
         while (key == RIGHT) {
 ${input.macro.map(step => generateStep(step, level)).join("\n")}
-          key = readKey();
         };
         printMenuBottom("Running");
         while (key != NONE) {
           key = readKey();
         };`
   }
+  //TODO check the loop, the 'while (key != RIGHT);' might be redundant considering that it would break using the if of the steps
   if (input.repeatUntilClick) {
     return `        printMenuBottom("Stop with ");
-        lcd.write(byte(RIGHT_ARROW));
+        lcd.write(byte(CONTINUE_ICON));
         do {
-${input.macro.map(step => generateStep(step, level)).join("\n")}
+${input.macro.map(step => generateStep(step, level, true)).join("\n")}
         } while (key != RIGHT);
-        waitForNoKey(RIGHT_ARROW);
+        waitForNoKey(CONTINUE_ICON);
         printMenuBottom("Running");`
   }
   if (input.code) {
-    return `        ${input.code.replaceAll(/\n/gm, "\n        ")}\n${stopMacroCode}`;
+    return `        ${input.code.replaceAll(/\n/gm, "\n        ")}\n${stopHandlingCode}`;
   }
   throw new Error("Unable to generate step: " + JSON.stringify(input));
 }
@@ -420,7 +427,7 @@ ${input.macro.map(step => generateStep(step, level)).join("\n")}
 const generateNameCases = () => entries.map(({ name }, i) => `    case ${i}:
       printMenuTop(${JSON.stringify(name)});
       printMenuBottom("Run");
-      lcd.write(byte(RIGHT_ARROW));
+      lcd.write(byte(CONTINUE_ICON));
       break;`).join("\n");
 
 const generateSelectionCases = () => entries.map(({ macro }, i) => `    case ${i}:
