@@ -333,42 +333,53 @@ let entries = inputJson.macros.map(entry => {
 
 const generateDefine = () => `#define MAX_ENTRIES ${entries.length}`
 
+const ifSelectCode = `        if (key == SELECT) {
+          waitForNoKey();
+          return;
+        }`;
+
+const stopMacroCode = `        key = readKey();\n${ifSelectCode}`;
+
+
 const generateStep = (input, level = 0) => {
-  if (input.text) {
-    return `        Keyboard.print(${JSON.stringify(input.text)});`
+  if (input.text) {//TODO turn into a loop for each letter and add the stop macro inside it
+    return `        Keyboard.print(${JSON.stringify(input.text)});\n${stopMacroCode}`
   }
   if (input.delay) {
-    return `        delay(${input.delay});`
+    return `        if (delayOrCancel(${input.delay})) {
+          waitForNoKey();
+          return;
+        }`
   }
   if (input.wait) {
-    return `        waitForAnyKey();`
+    return `        key = waitForAnyKey();\n${ifSelectCode}`
   }
   if (input.waitTimeout) {
-    return `        waitForAnyKey(${input.waitTimeout});`
+    return `        key = waitForAnyKey(${input.waitTimeout});\n${ifSelectCode}`
   }
   if (input.click) {
-    return `${input.click.map(key => `        Keyboard.press(${key});`).join("\n")}\n${input.click.map(key => `        Keyboard.release(${key});`).join("\n")}`
+    return `${input.click.map(key => `        Keyboard.press(${key});`).join("\n")}\n${input.click.map(key => `        Keyboard.release(${key});`).join("\n")}\n${stopMacroCode}`
   }
   if (input.press) {
-    return input.press.map(key => `        Keyboard.press(${key});`).join("\n");
+    return `${input.press.map(key => `        Keyboard.press(${key});`).join("\n")}\n${stopMacroCode}`;
   }
   if (input.release) {
-    return input.release.map(key => `        Keyboard.release(${key});`).join("\n");
+    return `${input.release.map(key => `        Keyboard.release(${key});`).join("\n")}\n${stopMacroCode}`;
   }
   if (input.mouseClick) {
-    return `${input.mouseClick.map(key => `        Mouse.press(${key});`).join("\n")}\n${input.mouseClick.map(key => `        Mouse.release(${key});`).join("\n")}`
+    return `${input.mouseClick.map(key => `        Mouse.press(${key});`).join("\n")}\n${input.mouseClick.map(key => `        Mouse.release(${key});`).join("\n")}\n${stopMacroCode}`
   }
   if (input.mousePress) {
-    return input.mousePress.map(key => `        Mouse.press(${key});`).join("\n");
+    return `${input.mousePress.map(key => `        Mouse.press(${key});`).join("\n")}\n${stopMacroCode}`;
   }
   if (input.mouseRelease) {
-    return input.mouseRelease.map(key => `        Mouse.release(${key});`).join("\n");
+    return `${input.mouseRelease.map(key => `        Mouse.release(${key});`).join("\n")}\n${stopMacroCode}`;
   }
   if (input.mouseMove) {
-    return `        Mouse.move(${input.mouseMove});`
+    return `        Mouse.move(${input.mouseMove});\n${stopMacroCode}`
   }
   if (input.mouseScroll) {
-    return `        Mouse.move(0,0,${input.mouseScroll});`
+    return `        Mouse.move(0,0,${input.mouseScroll});\n${stopMacroCode}`
   }
   if (input.repeat) {
     return `        for(int i${level}=0;i${level}<${input.repeat};i${level}++){\n${input.macro.map(step => generateStep(step, level + 1)).join("\n")}\n      }`
@@ -378,7 +389,8 @@ const generateStep = (input, level = 0) => {
         lcd.write(byte(RIGHT_ARROW));
         do {
           key = readKey();
-        } while (key == NONE);
+        } while (key != RIGHT && key != SELECT);
+        ${ifSelectCode}
         printMenuBottom("Release ");
         lcd.write(byte(RIGHT_ARROW));
         while (key == RIGHT) {
@@ -395,17 +407,12 @@ ${input.macro.map(step => generateStep(step, level)).join("\n")}
         lcd.write(byte(RIGHT_ARROW));
         do {
 ${input.macro.map(step => generateStep(step, level)).join("\n")}
-          key = readKey();
         } while (key != RIGHT);
-        printMenuBottom("Release ");
-        lcd.write(byte(RIGHT_ARROW));
-        while (key != NONE) {
-          key = readKey();
-        };
+        waitForNoKey(RIGHT_ARROW);
         printMenuBottom("Running");`
   }
   if (input.code) {
-    return "        " + input.code.replaceAll(/\n/gm, "\n        ");
+    return `        ${input.code.replaceAll(/\n/gm, "\n        ")}\n${stopMacroCode}`;
   }
   throw new Error("Unable to generate step: " + JSON.stringify(input));
 }

@@ -93,3 +93,5 @@ The JSON with the macro definitions should be an object with the given propertie
   * `{repeat:"hold",macro:MacroStep|MacroStep[]}` -  Waits for '>' to be pressed and repeats the given macro while is being pressed.
   * `{repeat:"click",macro:MacroStep|MacroStep[]}` -  Repeats the given macro until the '>' is pressed.
 * `code`:`{code:string|string[]}` - inserts the given string or string array directly as code on the generated file.
+
+//TODO Explain the possible key inputs

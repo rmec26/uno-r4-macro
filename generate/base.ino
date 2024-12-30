@@ -60,11 +60,11 @@ byte getLastKey() {
       current_key_time = millis();
     } else if (key != pressed_key && millis() - current_key_time >= KEY_DEBOUNCE) {
       pressed_key = key;
-    }else if(key == pressed_key && millis() - current_key_time >= SEND_CLICK_AFTER){
+    } else if (key == pressed_key && millis() - current_key_time >= SEND_CLICK_AFTER) {
       key = pressed_key;
       pressed_key = NONE;
       current_key = NONE;
-       return key;
+      return key;
     }
     return NONE;
   } else {
@@ -160,6 +160,23 @@ void printMenuBottom(char* text) {
   lcd.print(text);
 }
 
+void waitForNoKey(byte icon) {
+  printMenuBottom("Release ");
+  lcd.write(icon);
+  byte key = NONE;
+  do {
+    key = readKey();
+  } while (key != NONE);
+}
+
+void waitForNoKey() {
+  printMenuBottom("Release keys");
+  byte key = NONE;
+  do {
+    key = readKey();
+  } while (key != NONE);
+}
+
 byte waitForAnyKey(long timeout) {
   printMenuBottom("Press any key");
   byte key = NONE;
@@ -179,6 +196,16 @@ byte waitForAnyKey(long timeout) {
 
 byte waitForAnyKey() {
   return waitForAnyKey(0);
+}
+
+bool delayOrCancel(long delay) {
+  byte key = NONE;
+  long start = millis();
+  do {
+    key = readKey();
+  } while (key != SELECT && (millis() - start) < delay);
+
+  return key == SELECT;
 }
 
 void printMenuArrows() {
