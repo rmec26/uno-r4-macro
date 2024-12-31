@@ -75,7 +75,9 @@ The JSON with the macro definitions should be an object with the given propertie
 
 ### Macro commands
 
-* `text`:`{text:string}` - writes the given string.
+* `text`
+  * `{text:string}` - writes the given string.
+  * `{text:string,delay:number}` - writes the given string with the given delay between each character.
 * `delay`:`{delay:number}` - delays the macro run by the given amount of time (in milliseconds).
 * `wait`
   * `{wait:true}` - waits for a '>' key press on the arduino before continuing running.

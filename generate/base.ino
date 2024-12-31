@@ -227,7 +227,7 @@ byte delayOrCancelOrContinue(long delay) {
   do {
     key = readKey();
   } while (key != SELECT && key != RIGHT && (millis() - start) < delay);
-  if(key != SELECT && key != RIGHT){
+  if (key != SELECT && key != RIGHT) {
     return NONE;
   }
   return key;
@@ -280,6 +280,8 @@ void printCurrentMenuSelection() {
 }
 
 void runCurrentSelection() {
+  char* text = "";
+  int textPos = 0;
   byte key = NONE;
   printRunningMenu();
   switch (position) {

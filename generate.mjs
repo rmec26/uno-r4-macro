@@ -159,6 +159,7 @@ const processAllMouseKeysInput = (input) => {
 
 const relative = (...parts) => { parts.unshift(import.meta.dirname); return parts.join(sep) };
 
+const checkAndProcessDelayText = (input) => input && typeof input.text === "string" && input.text.length > 0 && typeof input.delay === "number" && input.delay > 0 ? { delayText: input.text, charDelay: Math.trunc(input.delay) } : null;
 const checkAndProcessText = (input) => input && typeof input.text === "string" && input.text.length > 0 ? { text: input.text } : null;
 const checkAndProcessDelay = (input) => input && typeof input.delay === "number" && input.delay > 0 ? { delay: Math.trunc(input.delay) } : null;
 const checkAndProcessWait = (input) => {
@@ -276,6 +277,7 @@ const checkAndProcessCode = (input) => {
 }
 
 const allProcessors = [
+  checkAndProcessDelayText,
   checkAndProcessText,
   checkAndProcessDelay,
   checkAndProcessWait,
@@ -344,17 +346,32 @@ const ifSelectAndContinueCode = `${ifSelectCode}
           break;
         }`;
 
-// const stopMacroCode = `        key = readKey();\n${ifSelectCode}`;
-
-
 const generateStep = (input, level = 0, stopWithContinue = false) => {
   let stopHandlingCode = `        key = readKey();\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}`;
-  if (input.text) {//TODO turn into a loop for each letter and add the stop macro inside it
-    return `        Keyboard.print(${JSON.stringify(input.text)});\n${stopHandlingCode}`
+  if (input.delayText) {//TODO cleanup this code to make it more readable/organized
+    return `        text = ${JSON.stringify(input.delayText)};
+        textPos = 0;
+        while (text[textPos]) {
+          Keyboard.print(text[textPos++]);
+          if(text[textPos]!=0){
+          ${stopWithContinue ? `        key = delayOrCancelOrContinue(${input.charDelay});\n${ifSelectAndContinueCode}` :
+        `        if (delayOrCancel(${input.charDelay})) {
+            waitForNoKey(CANCEL_ICON);
+            return;
+          }`}
+          }
+        }\n${stopHandlingCode}`
+  }
+  if (input.text) {
+    return `        text = ${JSON.stringify(input.text)};
+        textPos = 0;
+        while (text[textPos]) {
+          Keyboard.print(text[textPos++]);\n${stopHandlingCode}
+        }`
   }
   if (input.delay) {
     if (stopWithContinue) {
-      return `        key = delayOrCancelOrContinue(${input.delay});\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}`
+      return `        key = delayOrCancelOrContinue(${input.delay});\n${ifSelectAndContinueCode}`
     }
     return `        if (delayOrCancel(${input.delay})) {
           waitForNoKey(CANCEL_ICON);
