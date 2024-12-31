@@ -208,6 +208,18 @@ bool delayOrCancel(long delay) {
   return key == SELECT;
 }
 
+byte delayOrCancelOrContinue(long delay) {
+  byte key = NONE;
+  long start = millis();
+  do {
+    key = readKey();
+  } while (key != SELECT && key != RIGHT && (millis() - start) < delay);
+  if(key != SELECT && key != RIGHT){
+    return NONE;
+  }
+  return key;
+}
+
 void printMenuArrows() {
   lcd.setCursor(0, 0);
   lcd.write("  ");
@@ -276,6 +288,11 @@ void previousSelection() {
 }
 
 void loadMenu() {
+  lcd.createChar(UP_ICON, upIcon);
+  lcd.createChar(DOWN_ICON, downIcon);
+  lcd.createChar(BACK_ICON, backIcon);
+  lcd.createChar(CONTINUE_ICON, continueIcon);
+  lcd.createChar(NONE_ICON, noneIcon);
   printCurrentMenuSelection();
 }
 
@@ -300,6 +317,7 @@ void runMenu(byte key) {
 //Start Function
 
 void loadStart() {
+  lcd.createChar(CONTINUE_ICON, continueIcon);
 //{{START_MESSAGE}}
   printBottom("    Click ");
   lcd.write(byte(CONTINUE_ICON));
@@ -315,11 +333,6 @@ void runStart(byte key) {
 void setup() {
   lcd.begin(16, 2);
   printTop("Loading...");
-  lcd.createChar(UP_ICON, upIcon);
-  lcd.createChar(DOWN_ICON, downIcon);
-  lcd.createChar(BACK_ICON, backIcon);
-  lcd.createChar(CONTINUE_ICON, continueIcon);
-  lcd.createChar(NONE_ICON, noneIcon);
   Keyboard.begin();
   Mouse.begin();
   currentRunner = runStart;

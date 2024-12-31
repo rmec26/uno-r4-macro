@@ -352,7 +352,10 @@ const generateStep = (input, level = 0, stopWithContinue = false) => {
   if (input.text) {//TODO turn into a loop for each letter and add the stop macro inside it
     return `        Keyboard.print(${JSON.stringify(input.text)});\n${stopHandlingCode}`
   }
-  if (input.delay) {//TODO make this work properly if stopWithContinue is true
+  if (input.delay) {
+    if (stopWithContinue) {
+      return `        key = delayOrCancelOrContinue(${input.delay});\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}`
+    }
     return `        if (delayOrCancel(${input.delay})) {
           waitForNoKey();
           return;
@@ -408,13 +411,12 @@ ${input.macro.map(step => generateStep(step, level)).join("\n")}
           key = readKey();
         };`
   }
-  //TODO check the loop, the 'while (key != RIGHT);' might be redundant considering that it would break using the if of the steps
   if (input.repeatUntilClick) {
     return `        printMenuBottom("Stop with ");
         lcd.write(byte(CONTINUE_ICON));
-        do {
+        while (true) {
 ${input.macro.map(step => generateStep(step, level, true)).join("\n")}
-        } while (key != RIGHT);
+        };
         waitForNoKey(CONTINUE_ICON);
         printMenuBottom("Running");`
   }
