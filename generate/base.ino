@@ -12,7 +12,8 @@
 #define DOWN_ICON 1
 #define BACK_ICON 2
 #define CONTINUE_ICON 3
-#define NONE_ICON 4
+#define DOT_ICON 4
+#define CANCEL_ICON 5
 #define KEY_DEBOUNCE 10
 #define SEND_CLICK_AFTER 300
 //{{DEFINE}}
@@ -99,7 +100,7 @@ byte downIcon[8] = {
   0b00000
 };
 
-byte noneIcon[8] = {
+byte dotIcon[8] = {
   0b00000,
   0b00000,
   0b00100,
@@ -131,6 +132,18 @@ byte continueIcon[8] = {
   0b01000,
   0b00000
 };
+
+byte cancelIcon[8] = {
+  0b00000,
+  0b00000,
+  0b11111,
+  0b10001,
+  0b10001,
+  0b10001,
+  0b11111,
+  0b00000
+};
+
 
 void printTop(char* text) {
   lcd.setCursor(0, 0);
@@ -229,7 +242,7 @@ void printMenuArrows() {
   switch (position) {
     case 0:
       lcd.setCursor(0, 0);
-      lcd.write(byte(NONE_ICON));
+      lcd.write(byte(DOT_ICON));
       lcd.setCursor(0, 1);
       lcd.write(byte(DOWN_ICON));
       break;
@@ -237,7 +250,7 @@ void printMenuArrows() {
       lcd.setCursor(0, 0);
       lcd.write(byte(UP_ICON));
       lcd.setCursor(0, 1);
-      lcd.write(byte(NONE_ICON));
+      lcd.write(byte(DOT_ICON));
       break;
     default:
       lcd.setCursor(0, 0);
@@ -250,10 +263,10 @@ void printMenuArrows() {
 
 void printRunningMenu() {
   lcd.setCursor(0, 0);
-  lcd.write(byte(CONTINUE_ICON));
+  lcd.write(byte(DOT_ICON));
   lcd.write(" ");
   lcd.setCursor(0, 1);
-  lcd.write(byte(CONTINUE_ICON));
+  lcd.write(byte(DOT_ICON));
   lcd.write(" Running");
 }
 
@@ -292,7 +305,8 @@ void loadMenu() {
   lcd.createChar(DOWN_ICON, downIcon);
   lcd.createChar(BACK_ICON, backIcon);
   lcd.createChar(CONTINUE_ICON, continueIcon);
-  lcd.createChar(NONE_ICON, noneIcon);
+  lcd.createChar(DOT_ICON, dotIcon);
+  lcd.createChar(CANCEL_ICON, cancelIcon);
   printCurrentMenuSelection();
 }
 

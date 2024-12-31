@@ -334,7 +334,7 @@ let entries = inputJson.macros.map(entry => {
 const generateDefine = () => `#define MAX_ENTRIES ${entries.length}`
 
 const ifSelectCode = `        if (key == SELECT) {
-          waitForNoKey();
+          waitForNoKey(CANCEL_ICON);
           return;
         }`;
 
@@ -357,7 +357,7 @@ const generateStep = (input, level = 0, stopWithContinue = false) => {
       return `        key = delayOrCancelOrContinue(${input.delay});\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}`
     }
     return `        if (delayOrCancel(${input.delay})) {
-          waitForNoKey();
+          waitForNoKey(CANCEL_ICON);
           return;
         }`
   }
