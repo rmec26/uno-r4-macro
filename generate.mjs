@@ -348,17 +348,23 @@ const ifSelectAndContinueCode = `${ifSelectCode}
 
 const generateStep = (input, level = 0, stopWithContinue = false) => {
   let stopHandlingCode = `        key = readKey();\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}`;
-  if (input.delayText) {//TODO cleanup this code to make it more readable/organized
+  if (input.delayText) {
+    let delayHandlingCode;
+    if (stopWithContinue) {
+      delayHandlingCode = `        key = delayOrCancelOrContinue(${input.charDelay});\n${ifSelectAndContinueCode}`;
+    } else {
+      delayHandlingCode = `        if (delayOrCancel(${input.charDelay})) {
+        waitForNoKey(CANCEL_ICON);
+        return;
+      }`;
+    }
+
     return `        text = ${JSON.stringify(input.delayText)};
         textPos = 0;
         while (text[textPos]) {
           Keyboard.print(text[textPos++]);
           if(text[textPos]!=0){
-          ${stopWithContinue ? `        key = delayOrCancelOrContinue(${input.charDelay});\n${ifSelectAndContinueCode}` :
-        `        if (delayOrCancel(${input.charDelay})) {
-            waitForNoKey(CANCEL_ICON);
-            return;
-          }`}
+          ${delayHandlingCode}
           }
         }\n${stopHandlingCode}`
   }
@@ -379,10 +385,10 @@ const generateStep = (input, level = 0, stopWithContinue = false) => {
         }`
   }
   if (input.wait) {
-    return `        key = waitForAnyKey();\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}`
+    return `        key = waitForContinueKey();\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}`
   }
   if (input.waitTimeout) {
-    return `        key = waitForAnyKey(${input.waitTimeout});\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}`
+    return `        key = waitForContinueKey(${input.waitTimeout});\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}`
   }
   if (input.click) {
     return `${input.click.map(key => `        Keyboard.press(${key});`).join("\n")}\n${input.click.map(key => `        Keyboard.release(${key});`).join("\n")}\n${stopHandlingCode}`

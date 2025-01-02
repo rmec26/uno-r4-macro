@@ -100,6 +100,28 @@ byte downIcon[8] = {
   0b00000
 };
 
+byte leftIcon[8] = {
+  0b00000,
+  0b00000,
+  0b00110,
+  0b01100,
+  0b11000,
+  0b01100,
+  0b00110,
+  0b00000
+};
+
+byte rightIcon[8] = {
+  0b00000,
+  0b00000,
+  0b01100,
+  0b00110,
+  0b00011,
+  0b00110,
+  0b01100,
+  0b00000
+};
+
 byte dotIcon[8] = {
   0b00000,
   0b00000,
@@ -113,13 +135,13 @@ byte dotIcon[8] = {
 
 byte backIcon[8] = {
   0b00000,
-  0b00000,
-  0b00110,
+  0b00100,
   0b01100,
-  0b11000,
-  0b01100,
-  0b00110,
-  0b00000
+  0b11110,
+  0b01101,
+  0b00101,
+  0b10001,
+  0b01110
 };
 
 byte continueIcon[8] = {
@@ -190,25 +212,47 @@ void waitForNoKey() {
   } while (key != NONE);
 }
 
-byte waitForAnyKey(long timeout) {
-  printMenuBottom("Press any key");
+// byte waitForAnyKey(long timeout) {
+//   printMenuBottom("Press any key");
+//   byte key = NONE;
+//   if (timeout) {
+//     long start = millis();
+//     do {
+//       key = getLastKey();
+//     } while (key == NONE && (millis() - start) < timeout);
+//   } else {
+//     do {
+//       key = getLastKey();
+//     } while (key == NONE);
+//   }
+//   printMenuBottom("Running");
+//   return key;
+// }
+
+// byte waitForAnyKey() {
+//   return waitForAnyKey(0);
+// }
+
+byte waitForContinueKey(long timeout) {
+  printMenuBottom("Press ");
+  lcd.write(byte(CONTINUE_ICON));
   byte key = NONE;
   if (timeout) {
     long start = millis();
     do {
       key = getLastKey();
-    } while (key == NONE && (millis() - start) < timeout);
+    } while (key != SELECT && key != RIGHT && (millis() - start) < timeout);
   } else {
     do {
       key = getLastKey();
-    } while (key == NONE);
+    } while (key != SELECT && key != RIGHT);
   }
   printMenuBottom("Running");
   return key;
 }
 
-byte waitForAnyKey() {
-  return waitForAnyKey(0);
+byte waitForContinueKey() {
+  return waitForContinueKey(0);
 }
 
 bool delayOrCancel(long delay) {
