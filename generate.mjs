@@ -174,6 +174,13 @@ const checkAndProcessWait = (input) => {
   return null;
 };
 
+const checkAndProcessYesNo = (input) => {
+  if (input && (input.yes || input.no)) {
+    return { yes: processMacro(input.yes), no: processMacro(input.no) };
+  }
+  return null;
+}
+
 const checkAndProcessClick = (input) => {
   if (input && input.click) {
     let keys = processAllKeysInput(input.click);
@@ -281,6 +288,7 @@ const allProcessors = [
   checkAndProcessText,
   checkAndProcessDelay,
   checkAndProcessWait,
+  checkAndProcessYesNo,
   checkAndProcessClick,
   checkAndProcessPress,
   checkAndProcessRelease,
@@ -389,6 +397,18 @@ const generateStep = (input, level = 0, stopWithContinue = false) => {
   }
   if (input.waitTimeout) {
     return `        key = waitForContinueKey(${input.waitTimeout});\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}`
+  }
+  if (input.yes && input.no) {
+    const yesCode = input.yes.length ? `if(key == RIGHT){
+          ${input.yes.map(step => generateStep(step, level, stopWithContinue)).join("\n")}
+        }`: '';
+    const noCode = input.no.length ? `if(key == LEFT){
+          ${input.no.map(step => generateStep(step, level, stopWithContinue)).join("\n")}
+        }`: '';
+    return `        key = waitForContinueOrBackKey();\n${stopWithContinue ? ifSelectAndContinueCode : ifSelectCode}
+        ${ifSelectCode}
+        ${yesCode}
+        ${noCode}`
   }
   if (input.click) {
     return `${input.click.map(key => `        Keyboard.press(${key});`).join("\n")}\n${input.click.map(key => `        Keyboard.release(${key});`).join("\n")}\n${stopHandlingCode}`

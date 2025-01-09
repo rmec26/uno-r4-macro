@@ -255,6 +255,30 @@ byte waitForContinueKey() {
   return waitForContinueKey(0);
 }
 
+byte waitForContinueOrBackKey(long timeout) {
+  printMenuBottom("No:");
+  lcd.write(byte(BACK_ICON));
+  lcd.write(" Yes:");
+  lcd.write(byte(CONTINUE_ICON));
+  byte key = NONE;
+  if (timeout) {
+    long start = millis();
+    do {
+      key = getLastKey();
+    } while (key != SELECT && key != RIGHT && key != LEFT && (millis() - start) < timeout);
+  } else {
+    do {
+      key = getLastKey();
+    } while (key != SELECT && key != RIGHT && key != LEFT);
+  }
+  printMenuBottom("Running");
+  return key;
+}
+
+byte waitForContinueOrBackKey() {
+  return waitForContinueOrBackKey(0);
+}
+
 bool delayOrCancel(long delay) {
   byte key = NONE;
   long start = millis();

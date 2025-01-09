@@ -82,6 +82,10 @@ The JSON with the macro definitions should be an object with the given propertie
 * `wait`
   * `{wait:true}` - waits for a '>' key press on the arduino before continuing running.
   * `{wait:number}` - waits for a '>' key press on the arduino or for the given amount of time (in milliseconds) to pass, whichever is first, before continuing running.
+* `yesNo`
+  * `{yes:MacroStep|MacroStep[]}` -  Runs the given macro `yes` if the continue is clicked, skips it otherwise.
+  * `{no:MacroStep|MacroStep[]}` -  Runs the given macro `no` if the back is clicked, skips it otherwise.
+  * `{yes:MacroStep|MacroStep[],no:MacroStep|MacroStep[]}` -  Runs the given macro `yes` if the continue is clicked and the macro `no` if the back is clicked.
 * `click`:`{click:Key|Key[]}` - presses and releases all given keys.
 * `press`:`{press:Key|Key[]}` - presses all given keys.
 * `release`:`{release:Key|Key[]}` - releases all given keys.
