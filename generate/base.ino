@@ -16,7 +16,10 @@
 #define CANCEL_ICON 5
 #define KEY_DEBOUNCE 10
 #define SEND_CLICK_AFTER 300
-//{{DEFINE}}
+
+//{{GLOBALS}}
+
+byte menu_level = 0;
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
@@ -25,8 +28,6 @@ byte pressed_key = NONE;
 byte current_key = NONE;
 
 long current_key_time;
-
-byte position = 0;
 
 void (*currentRunner)(byte);
 
@@ -185,6 +186,9 @@ void printMenuTop(char* text) {
   lcd.setCursor(2, 0);
   lcd.print("               ");
   lcd.setCursor(2, 0);
+  for (int i = 0; i < menu_level; i++) {
+    lcd.print('/');
+  }
   lcd.print(text);
 }
 
@@ -303,30 +307,20 @@ byte delayOrCancelOrContinue(long delay) {
 
 void printMenuArrows() {
   lcd.setCursor(0, 0);
-  lcd.write("  ");
-  lcd.setCursor(0, 1);
-  lcd.write("  ");
-
-  switch (position) {
-    case 0:
-      lcd.setCursor(0, 0);
-      lcd.write(byte(DOT_ICON));
-      lcd.setCursor(0, 1);
-      lcd.write(byte(DOWN_ICON));
-      break;
-    case MAX_ENTRIES - 1:
-      lcd.setCursor(0, 0);
-      lcd.write(byte(UP_ICON));
-      lcd.setCursor(0, 1);
-      lcd.write(byte(DOT_ICON));
-      break;
-    default:
-      lcd.setCursor(0, 0);
-      lcd.write(byte(UP_ICON));
-      lcd.setCursor(0, 1);
-      lcd.write(byte(DOWN_ICON));
-      break;
+  if (menu_position[menu_level] == 0) {
+    lcd.write(byte(DOT_ICON));
+  } else {
+    lcd.write(byte(UP_ICON));
   }
+  lcd.write(" ");
+
+  lcd.setCursor(0, 1);
+  if (menu_position[menu_level] == (menu_max_position[menu_level] - 1)) {
+    lcd.write(byte(DOT_ICON));
+  } else {
+    lcd.write(byte(DOWN_ICON));
+  }
+  lcd.write(" ");
 }
 
 void printRunningMenu() {
@@ -340,33 +334,43 @@ void printRunningMenu() {
 
 //Menu Functions
 
-void printCurrentMenuSelection() {
-  switch (position) {
 //{{PRINT_SELECTION}}
-  }
-  printMenuArrows();
+
+//{{RUN_SELECTION}}
+
+void printCurrentMenuSelection() {
+  (*printMenuPointer[menu_level])();
 }
 
-void runCurrentSelection() {
-  char* text = "";
-  int textPos = 0;
-  byte key = NONE;
-  printRunningMenu();
-  switch (position) {
-//{{RUN_SELECTION}}
-  }
-  Keyboard.releaseAll();
+void runCurrentMenuSelection() {
+  (*runMenuPointer[menu_level])();
 }
 
 void nextSelection() {
-  if (position < MAX_ENTRIES - 1) {
-    position++;
+  if (menu_position[menu_level] < menu_max_position[menu_level] - 1) {
+    menu_position[menu_level]++;
   }
 }
 
 void previousSelection() {
-  if (position > 0) {
-    position--;
+  if (menu_position[menu_level] > 0) {
+    menu_position[menu_level]--;
+  }
+}
+
+void setNextMenuLevel(void (*printMenuFunc)(), void (*runMenuFunc)(), byte size) {
+  menu_level++;
+  printMenuPointer[menu_level] = printMenuFunc;
+  runMenuPointer[menu_level] = runMenuFunc;
+  menu_position[menu_level] = 0;
+  menu_max_position[menu_level] = size;
+}
+
+void setToPreviousLevel() {
+  if (menu_level) {
+    menu_level--;
+  } else {
+    menu_position[0] = 0;
   }
 }
 
@@ -388,12 +392,15 @@ void runMenu(byte key) {
     } else if (key == DOWN) {
       nextSelection();
       printCurrentMenuSelection();
-    } else if (key == LEFT || key == SELECT) {
+    } else if (key == LEFT) {
+      setToPreviousLevel();
+      printCurrentMenuSelection();
+    } else if (key == RIGHT) {
+      runCurrentMenuSelection();
+      printCurrentMenuSelection();
+    } else if (key == SELECT) {
       currentRunner = runStart;
       loadStart();
-    } else if (key == RIGHT) {
-      runCurrentSelection();
-      printCurrentMenuSelection();
     }
   }
 }
@@ -415,6 +422,7 @@ void runStart(byte key) {
 }
 
 void setup() {
+//{{SETUP_SELECTION}}
   lcd.begin(16, 2);
   printTop("Loading...");
   Keyboard.begin();

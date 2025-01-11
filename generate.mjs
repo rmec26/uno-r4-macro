@@ -1,3 +1,4 @@
+//@ts-check
 import { existsSync, readFileSync, statSync, writeFileSync } from "fs"
 import { sep } from "path";
 
@@ -336,12 +337,63 @@ const processStep = (input) => {
 
 const inputJson = JSON.parse(readFileSync(inputPath).toString());
 
-let entries = inputJson.macros.map(entry => {
-  let [name, macro] = Object.entries(entry)[0];
-  return { name, macro: processMacro(macro) };
-});
+function processMenu(menuObj, path = ["menu"], depth = 1) {
+  let maxDepth = depth;
+  if (!menuObj || typeof menuObj != "object" || (menuObj instanceof Array)) {
+    throw new Error(`${path.join(".")} is not a valid Menu directory.`);
+  }
 
-const generateDefine = () => `#define MAX_ENTRIES ${entries.length}`
+  const processedMenu = Object.entries(menuObj).map(([key, entry]) => {
+    if (key.startsWith("$")) {//Is Macro
+      return { name: key.slice(1), macro: processMacro(entry) };
+    } else if (key.startsWith("@")) {//Is Extra
+      if (typeof entry != "string") {
+        throw new Error(`${path.join(".")} is not a valid Extra name.`);
+      }
+      //TODO add check to see if the extra actually exists
+      return { name: key.slice(1), extra: entry };
+    } else if (key.startsWith("#")) {//Is Comment
+      return null;
+    } else {//Is Menu
+      let [menu, finalDepth] = processMenu(entry, [...path, key], depth + 1);
+      if (finalDepth > maxDepth) {
+        maxDepth = finalDepth;
+      }
+      return { name: key, menu };
+    }
+  }).filter(Boolean);
+
+  if (!processedMenu.length) {
+    throw new Error(`${path.join(".")} is an empty menu.`);
+  }
+
+  return [processedMenu, maxDepth];
+}
+
+//TODO Remove this after converting all configs
+if (inputJson.macros) {
+  console.log("root.macros detected, loading contents into the menu...")
+  if (!inputJson.menu) {
+    inputJson.menu = {};
+  }
+  inputJson.macros.forEach(entry => {
+    let [name, macro] = Object.entries(entry)[0];
+    inputJson.menu[`$${name}`] = macro;
+  })
+}
+
+const [processedMenu, maxDepth] = processMenu(inputJson.menu);
+
+const generateMenuGlobals = () => {
+  let list = `[${maxDepth}]={0${"".padEnd((maxDepth - 1) * 2, ",0")}}`
+  return `byte menu_position ${list};
+
+byte menu_max_position ${list};
+
+void (*printMenuPointer[${maxDepth}]) ();
+
+void (*runMenuPointer[${maxDepth}]) ();`
+}
 
 const ifSelectCode = `        if (key == SELECT) {
           waitForNoKey(CANCEL_ICON);
@@ -469,17 +521,72 @@ ${input.macro.map(step => generateStep(step, level, true)).join("\n")}
   throw new Error("Unable to generate step: " + JSON.stringify(input));
 }
 
-const generateNameCases = () => entries.map(({ name }, i) => `    case ${i}:
-      printMenuTop(${JSON.stringify(name)});
-      printMenuBottom("Run");
+const generateNameCases = (menu, depth = 0, prefix = "") => {
+  let levels = [];
+  levels.push(`
+void printMenuSelection${prefix}() {
+  switch (menu_position[${depth}]) {
+${menu.map((entry, i) => {
+    let message;
+    if (entry.macro) {
+      message = "Run";
+    } else if (entry.menu) {
+      message = "Open";
+      levels.push(generateNameCases(entry.menu, depth + 1, prefix + "_" + i));
+    } else if (entry.extra) {
+      message = "Load";
+    }
+    return `    case ${i}:
+      printMenuTop(${JSON.stringify(entry.name)});
+      printMenuBottom("${message}");
       lcd.write(byte(CONTINUE_ICON));
-      break;`).join("\n");
+    break;`}).join("\n")}
+  }
+  printMenuArrows();
+}`)
 
-const generateSelectionCases = () => entries.map(({ macro }, i) => `    case ${i}:
+  return levels.join("\n");
+}
+
+
+const generateSelectionCases = (menu, depth = 0, prefix = "") => {
+  let levels = [];
+  levels.push(`
+void runMenuSelection${prefix}() {
+  char* text = "";
+  int textPos = 0;
+  byte key = NONE;
+  //TODO Possiby move to only the macro ones
+  printRunningMenu();
+  switch (menu_position[${depth}]) {
+${menu.map((entry, i) => {
+    let content;
+    if (entry.macro) {
+      content = entry.macro.map(step => generateStep(step)).join("\n");
+    } else if (entry.menu) {
+      content = `//Open next menu: menu${prefix + "_" + i}, size:${entry.menu.length}
+        setNextMenuLevel(printMenuSelection${prefix + "_" + i},runMenuSelection${prefix + "_" + i},${entry.menu.length});`
+      levels.push(generateSelectionCases(entry.menu, depth + 1, prefix + "_" + i));
+    } else if (entry.extra) {//TODO make it work
+      content = `//LOAD '${entry.extra}' here.`
+    }
+    return `    case ${i}:
       {
-${macro.map(step => generateStep(step)).join("\n")}
+${content}
         break;
-      }`).join("\n");
+      }`;
+
+  }).join("\n")}
+  }
+  Keyboard.releaseAll();
+}`)
+
+  return levels.join("\n");
+}
+
+const generateSelectionSetup = (menu) => `  printMenuPointer[0]=printMenuSelection;
+  runMenuPointer[0]=runMenuSelection;
+  menu_max_position[0]=${menu.length};`
 
 const generateStartMessage = () => {
   let message = typeof inputJson.startMessage == "string" ? inputJson.startMessage : "Uno R4 Macro";
@@ -494,14 +601,17 @@ let baseFile = readFileSync(relative("generate", "base.ino")).toString();
 writeFileSync(relative("uno-r4-macro.ino"), baseFile.replaceAll(/ *\/\/\{\{(.+)\}\}/g, (_, id) => {
   let generatedText;
   switch (id) {
-    case "DEFINE":
-      generatedText = generateDefine();
+    case "GLOBALS":
+      generatedText = generateMenuGlobals();
       break;
     case "PRINT_SELECTION":
-      generatedText = generateNameCases();
+      generatedText = generateNameCases(processedMenu);
       break;
     case "RUN_SELECTION":
-      generatedText = generateSelectionCases();
+      generatedText = generateSelectionCases(processedMenu);
+      break;
+    case "SETUP_SELECTION":
+      generatedText = generateSelectionSetup(processedMenu);
       break;
     case "START_MESSAGE":
       generatedText = generateStartMessage();
@@ -511,3 +621,21 @@ writeFileSync(relative("uno-r4-macro.ino"), baseFile.replaceAll(/ *\/\/\{\{(.+)\
   }
   return `//{{${id}_START}}\n${generatedText}\n//{{${id}_END}}`;
 }));
+
+const showMenu = (menu, padding = "") => {
+  menu.forEach(entry => {
+    let suffix = "";
+    if (entry.macro) {
+      suffix = " -> Macro";
+    } else if (entry.extra) {
+      suffix = ` -> Extra '${entry.extra}'`;
+    }
+    console.log(`${padding}${entry.name}${suffix}`);
+    if (entry.menu) {
+      showMenu(entry.menu, padding + "  ");
+    }
+  });
+}
+
+console.log("Final Menu\n");
+showMenu(processedMenu);
