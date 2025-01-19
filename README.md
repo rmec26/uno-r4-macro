@@ -30,45 +30,31 @@ The JSON with the macro definitions should be an object with the given propertie
 ```json
 {
   "startMessage": "Macro Tester",
-  "macros": [
-    {
-      "Macro 1": ["ThisIsATest\t",{"delay":500},"qwertyuiop12345\n"]
-    },
-    {
-      "Macro 2": ["SimpleTestWithNewLine\n"]
-    },
-    {
-      "Macro 3": ["justAline"]
-    },
-    {
-      "Macro 4": ["TestWithWaiting\n",{"wait":true},{"text":"line2\n"}]
-    },
-    {
-      "Macro 5": ["TestWithTimedWaiting\n",{"waitTimeout":5000},{"text":"and done.\n"}]
-    },
-    {
-      "Macro 6": [
-        "RepeatTest\n",
-        {
-          "repeat": 5,
-          "macro": ["Neat\n",200]
-        },
-        {"text": "and done.\n"}
-      ]
-    },
-    {
-      "Test 7": [
-        "RepeatHoldTest\n",
-        {
-          "repeatHold": true,
-          "macro": ["Neat\n",100]
-        },
-        {
-          "text": "and done.\n"
-        }
-      ]
-    }
-  ]
+  "menu": {
+    "$Macro 1": ["ThisIsATest\t",{"delay":500},"qwertyuiop12345\n"],
+    "$Macro 2": ["SimpleTestWithNewLine\n"],
+    "$Macro 3": ["justAline"],
+    "$Macro 4": ["TestWithWaiting\n",{"wait":true},{"text":"line2\n"}],
+    "$Macro 5": ["TestWithTimedWaiting\n",{"waitTimeout":5000},{"text":"and done.\n"}],
+    "$Macro 6": [
+      "RepeatTest\n",
+      {
+        "repeat": 5,
+        "macro": ["Neat\n",200]
+      },
+      {"text": "and done.\n"}
+    ],
+    "$Macro 7": [
+      "RepeatHoldTest\n",
+      {
+        "repeatHold": true,
+        "macro": ["Neat\n",100]
+      },
+      {
+        "text": "and done.\n"
+      }
+    ]
+  }
 }
 ```
 

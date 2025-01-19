@@ -370,18 +370,6 @@ function processMenu(menuObj, path = ["menu"], depth = 1) {
   return [processedMenu, maxDepth];
 }
 
-//TODO Remove this after converting all configs
-if (inputJson.macros) {
-  console.log("root.macros detected, loading contents into the menu...")
-  if (!inputJson.menu) {
-    inputJson.menu = {};
-  }
-  inputJson.macros.forEach(entry => {
-    let [name, macro] = Object.entries(entry)[0];
-    inputJson.menu[`$${name}`] = macro;
-  })
-}
-
 const [processedMenu, maxDepth] = processMenu(inputJson.menu);
 
 const generateMenuGlobals = () => {
